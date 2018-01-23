@@ -3,6 +3,7 @@ package hl.restapi.service;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
 
 import javax.servlet.http.HttpServletRequest;
 import org.json.JSONObject;
@@ -20,7 +21,6 @@ public class RESTServiceReq {
 	protected JSONObject jsonEchoAttrs 				= null;
 	
 	protected Map<String, String> mapConfigs		= null;
-	
 	
 	//
 	
@@ -50,12 +50,31 @@ public class RESTServiceReq {
 		return mapConfigs;
 	}
 	
-	public Map<String, String> addToConfigMap(String aKey, String aValue)
+	public void addToConfigMap(Map<String, String> aConfigMap)
+	{
+		if(aConfigMap!=null)
+		{
+			mapConfigs.putAll(aConfigMap);
+		}
+	}
+	
+	public void addToConfigMap(Properties aProp)
+	{
+		if(aProp!=null)
+		{
+			for(Object oPropKey : aProp.keySet())
+			{
+				String sPropKey = String.valueOf(oPropKey);
+				addToConfigMap(sPropKey,aProp.getProperty(sPropKey));
+			}
+		}
+	}
+	
+	public void addToConfigMap(String aKey, String aValue)
 	{
 		if(mapConfigs==null)
 			mapConfigs = new HashMap<String, String>();
 		mapConfigs.put(aKey, aValue);
-		return mapConfigs;
 	}
 	
 	public JSONObject getEchoJsonAttrs()
