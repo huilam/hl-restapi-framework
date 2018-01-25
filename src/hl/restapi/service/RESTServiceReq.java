@@ -11,6 +11,10 @@ import hl.common.http.RestApiUtil;
 
 public class RESTServiceReq {
 
+	public static String _RESTAPI_PLUGIN_IMPL_CLASSNAME = "restapi.plugin.implementation";
+	public static String _RESTAPI_ECHO_JSONATTR_PREFIX	= "restapi.echo.jsonattr.prefix";
+	public static String _RESTAPI_BASE_URL				= "restapi.baseurl";
+	
 	//
 	protected String urlPath 						= null;
 	protected HttpServletRequest httpServletReq		= null;
@@ -19,9 +23,11 @@ public class RESTServiceReq {
 	protected String reqInputContentData			= null;
 
 	protected JSONObject jsonEchoAttrs 				= null;
+	protected JSONObject jsonUrlPathParams 			= null;
 	
 	protected Map<String, String> mapConfigs		= null;
 	
+
 	//
 	
 	public RESTServiceReq(HttpServletRequest aReq, Map<String, String> aConfigMap)
@@ -40,6 +46,9 @@ public class RESTServiceReq {
 		this.reqInputContentData = RestApiUtil.getReqContent(aReq);
 		
 		this.jsonEchoAttrs = extractEchoAttrs(aReq, aConfigMap);
+		
+		String sBaseUrl = aConfigMap.get(_RESTAPI_BASE_URL);
+		this.jsonUrlPathParams = extractPathParams(aReq.getPathInfo(), sBaseUrl);
 	}
 	///
 	
@@ -82,6 +91,18 @@ public class RESTServiceReq {
 		return jsonEchoAttrs;
 	}
 	
+	public JSONObject getUrlPathParam()
+	{
+		return jsonUrlPathParams;
+	}
+	
+	public void addUrlPathParam(String aParamName, String aParamValue)
+	{
+		if(jsonUrlPathParams==null)
+			jsonUrlPathParams = new JSONObject();
+		jsonUrlPathParams.put(aParamName, aParamValue);
+	}
+
 	public String getUrlPath()
 	{
 		return this.urlPath;
@@ -161,6 +182,16 @@ public class RESTServiceReq {
 			
 		}
 		return jsonAttrs;
+    }
+    
+    private JSONObject extractPathParams(String aReqPathUrl, String aConfigPathUrl)
+    {
+    	JSONObject jsonParam = new JSONObject();
+    	
+    	
+    	
+    	
+		return jsonParam;
     }
     
 	
