@@ -103,6 +103,18 @@ public class RESTServiceReq {
 		jsonUrlPathParams.put(aParamName, aParamValue);
 	}
 
+	public void addUrlPathParam(Map<String, String> aPathParamsMap)
+	{
+		if(aPathParamsMap!=null)
+		{
+			for(String sParamKey : aPathParamsMap.keySet())
+			{
+				String sParamValue = aPathParamsMap.get(sParamKey);
+				addUrlPathParam(sParamKey, sParamValue);
+			}
+		}
+	}
+	
 	public String getUrlPath()
 	{
 		return this.urlPath;
