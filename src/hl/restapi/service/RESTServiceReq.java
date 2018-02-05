@@ -96,6 +96,17 @@ public class RESTServiceReq {
 		return jsonUrlPathParams;
 	}
 	
+	public String getUrlPathParam(String aParamName)
+	{
+		if(jsonUrlPathParams==null)
+			return null;
+		
+		if(jsonUrlPathParams.has(aParamName))
+			return jsonUrlPathParams.getString(aParamName);
+		else
+			return null;
+	}
+	
 	public void addUrlPathParam(String aParamName, String aParamValue)
 	{
 		if(jsonUrlPathParams==null)
