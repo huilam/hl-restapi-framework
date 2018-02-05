@@ -1,10 +1,10 @@
-package hl.restapi.service;
+package hl.restapi.plugins;
 
 import hl.common.http.HttpResp;
+import hl.restapi.service.RESTApiException;
+import hl.restapi.service.RESTServiceReq;
 
 public interface IServicePlugin {
-	 
-	public RESTServiceReq preProcess(RESTServiceReq aRestReq);
 	
 	public HttpResp postProcess(RESTServiceReq aRestReq, HttpResp aHttpResp);
 	

@@ -12,7 +12,7 @@
 	</servlet>
 	
   	<servlet-mapping>
-    	<servlet-name>CRUDService</servlet-name>
+    	<servlet-name>RESTApiService</servlet-name>
     	<url-pattern>/*</url-pattern>
  	</servlet-mapping>
   

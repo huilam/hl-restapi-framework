@@ -3,6 +3,10 @@ package hl.restapi.service;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -13,6 +17,7 @@ import org.json.JSONObject;
 
 import hl.common.http.HttpResp;
 import hl.common.http.RestApiUtil;
+import hl.restapi.plugins.IServicePlugin;
 
 public class RESTApiService extends HttpServlet {
 
@@ -20,21 +25,17 @@ public class RESTApiService extends HttpServlet {
 	
 	protected final static String TYPE_APP_JSON 	= "application/json"; 
 	protected final static String TYPE_PLAINTEXT 	= "text/plain"; 
-
-	protected static String _RESTAPI_PLUGIN_IMPL_CLASSNAME 	= "restapi.plugin.implementation";
-	protected static String _RESTAPI_ECHO_JSONATTR_PREFIX	= "restapi.echo.jsonattr.prefix";
 	
-	private static String _VERSION = "0.0.1";
+	private static RESTApiConfig apiConfig = new RESTApiConfig();
+
+	
+	private static String _VERSION = "0.0.2";
 		
 	public static final String GET 		= "GET";
 	public static final String POST 	= "POST";
 	public static final String DELETE	= "DELETE";
 	public static final String PUT 		= "PUT";
 
-	public RESTApiService() {
-        super();
-    }
-    
     @Override
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException {
 
@@ -43,7 +44,7 @@ public class RESTApiService extends HttpServlet {
     	{
 			try {
 				RestApiUtil.processHttpResp(response, 
-						HttpServletResponse.SC_NO_CONTENT, 
+						HttpServletResponse.SC_OK, 
 						TYPE_APP_JSON, getAbout().toString());
 			} catch (IOException e) {
 				throw new ServletException(e);
@@ -81,7 +82,6 @@ public class RESTApiService extends HttpServlet {
     {
     	String sPathInfo 			= req.getPathInfo();  //{crudkey}/xx/xx
     	
-    	JSONObject jsonResult 		= null;
     	JSONObject jsonErrors 		= new JSONObject();
     	
     	HttpResp httpReq = new HttpResp();
@@ -95,52 +95,68 @@ System.out.println("sInputContentType:"+sInputContentType);
 System.out.println("sInputData:"+sInputData);
 System.out.println();
 */    	
-		String[] sPaths = getUrlSegments(sPathInfo);
+		String[] sUrlPaths = RESTApiUtil.getUrlSegments(sPathInfo);
+		Map<String, String> mapUrl = apiConfig.getMapLenUrls().get(sUrlPaths.length);
 		
-		Map<String, String> mapCrudConfig = null;
-		if(mapCrudConfig==null)
-			mapCrudConfig = new HashMap<String, String>();
-		//
-		RESTServiceReq restReq = new RESTServiceReq(req, mapCrudConfig);
-
-		//
-		IServicePlugin plugin = null;
-		try {
-			plugin = getPlugin(mapCrudConfig);
-			restReq = preProcess(plugin, restReq);
-
-			if(GET.equalsIgnoreCase(restReq.getHttpMethod()))
+		String sRestApiKey = null;
+		
+		if(mapUrl!=null)
+		{
+			for(String sMapUrl : mapUrl.keySet())
 			{
+				sRestApiKey = mapUrl.get(sMapUrl);
+				String[] sMapUrls = RESTApiUtil.getUrlSegments(sMapUrl);
+				for(int i=0; i<sMapUrls.length; i++)
+				{
+					if(sMapUrls[i].startsWith("{") && sMapUrls[i].endsWith("}"))
+					{
+						//ok, path param
+					}
+					else if(!sMapUrls[i].equals(sUrlPaths[i]))
+					{
+						sRestApiKey = null;
+						break;
+					}
+				}
+				
 			}
-			else if(POST.equalsIgnoreCase(restReq.getHttpMethod()))
-			{
-			}
-			else if(PUT.equalsIgnoreCase(restReq.getHttpMethod()))
-			{				
-			}
-			else if(DELETE.equalsIgnoreCase(restReq.getHttpMethod()))
-			{
-			}
-			///////////////////////////
-			
-			httpReq = postProcess(plugin, restReq, httpReq);
-			
-		} catch (RESTApiException e) {
-
-			JSONArray jArrErrors = new JSONArray();
-			
-			if(jsonErrors.has("errors"))
-				jArrErrors = jsonErrors.getJSONArray("errors");
-			
-			jArrErrors.put(e.getErrorCode()+" : "+e.getErrorMsg());
-			
-			httpReq.setContent_type(TYPE_APP_JSON);
-			httpReq.setContent_data(jArrErrors.toString());
-			httpReq.setHttp_status(HttpServletResponse.SC_BAD_REQUEST);
-			httpReq.setHttp_status_message(e.getErrorMsg());
-			
-			httpReq = handleException(plugin, restReq, httpReq, e);
 		}
+		
+		
+		if(sRestApiKey!=null)
+		{
+			Properties propConfig = apiConfig.getConfig(sRestApiKey);
+			if(propConfig==null)
+				propConfig = new Properties();
+			//
+			RESTServiceReq restReq = new RESTServiceReq(req, propConfig);
+
+			//
+			IServicePlugin plugin = null;
+			try {
+				plugin = getPlugin(propConfig);
+
+				httpReq = postProcess(plugin, restReq, httpReq);
+				
+			} catch (RESTApiException e) {
+
+				JSONArray jArrErrors = new JSONArray();
+				
+				if(jsonErrors.has("errors"))
+					jArrErrors = jsonErrors.getJSONArray("errors");
+				
+				jArrErrors.put(e.getErrorCode()+" : "+e.getErrorMsg());
+				
+				httpReq.setContent_type(TYPE_APP_JSON);
+				httpReq.setContent_data(jArrErrors.toString());
+				httpReq.setHttp_status(HttpServletResponse.SC_BAD_REQUEST);
+				httpReq.setHttp_status_message(e.getErrorMsg());
+				
+				httpReq = handleException(plugin, restReq, httpReq, e);
+			}
+			
+		}
+		
 		
 		try {
 			RestApiUtil.processHttpResp(res, httpReq.getHttp_status(), httpReq.getContent_type(), httpReq.getContent_data());
@@ -149,14 +165,6 @@ System.out.println();
 		}
     }
         
-    public RESTServiceReq preProcess(
-    		IServicePlugin aPlugin, 
-    		RESTServiceReq restReq) 
-    {
-    	if(aPlugin==null)
-    		return restReq;
-    	return aPlugin.preProcess(restReq);
-    }
     
     public HttpResp postProcess(
     		IServicePlugin aPlugin, 
@@ -192,18 +200,12 @@ System.out.println();
     	return aPlugin.handleException(aRestReq , aHttpResp, aException);
     }
     
-	public static String[] getUrlSegments(String aURL)
-	{
-		if(aURL==null)
-			return new String[]{};
-		
-		return aURL.trim().substring(1).split("/");
-	}
+
     
-    private IServicePlugin getPlugin(Map<String, String> aMapCrudConfig) throws RESTApiException
+    private IServicePlugin getPlugin(Properties aProp) throws RESTApiException
     {
 		IServicePlugin plugin = null;
-		String sPluginClassName = aMapCrudConfig.get(_RESTAPI_PLUGIN_IMPL_CLASSNAME);
+		String sPluginClassName = aProp.getProperty(RESTApiConfig._KEY_PLUGIN_CLASSNAME);
     	if(sPluginClassName!=null && sPluginClassName.trim().length()>0)
     	{
 	    	try {
@@ -218,6 +220,6 @@ System.out.println();
     	}
     	return plugin;
     }
-    
+
     
 }

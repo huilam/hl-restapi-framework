@@ -26,6 +26,9 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import hl.common.PropUtil;
 
 
@@ -33,43 +36,123 @@ public class RESTApiConfig {
 	
 	public static String _PROP_FILENAME 			= "restapi.properties";
 	//
+	public static String _KEY_PLUGIN_CLASSNAME		= "plugin.implementation";
+	public static String _KEY_ECHO_ATTR_PREFIX		= "optional.echo.jsonattr.prefix";
+	public static String _KEY_MAPPED_URL			= "optional.mapped.url";
+	//
 	public static String ERRCODE_PLUGINEXCEPTION	= "plugin_exception";
 	public static String ERRCODE_INVALIDFORMAT		= "invalid_format_exception";
 	
 	//
+	private static Map<Integer, Map<String, String>> mapLenUrls = new HashMap<Integer, Map<String, String>>();
+	private static Pattern pattMappedUrlKey 	= Pattern.compile("restapi\\.(.+?)\\."+RESTApiConfig._KEY_MAPPED_URL); 	
+	
+	private static Pattern pattRestApiKey = Pattern.compile("restapi\\.(.+?)\\.(.+)"); 	
 	private Map<String, Properties> mapConfigs = null;
 	//
 
-	public RESTApiConfig(String aPropFileName) throws IOException
+	public RESTApiConfig(String aPropFileName)
 	{
 		init(aPropFileName);
 	}
 	
-	public RESTApiConfig() throws IOException
+	public RESTApiConfig() 
 	{
 		init(null);
 	}
 	
-	public void init(String aPropFilename) throws IOException
+	public void init(String aPropFilename) 
 	{		
 		mapConfigs = new HashMap<String, Properties>();
+		
+		if(aPropFilename==null)
+			aPropFilename = _PROP_FILENAME;
 		
 		Properties props = null;
 		if(aPropFilename!=null && aPropFilename.trim().length()>0)
 		{
-			props = PropUtil.loadProperties(aPropFilename);
+			try {
+				props = PropUtil.loadProperties(aPropFilename);
+			} catch (IOException e) {
+				props = null;
+			}
 		}
 		
-		/////////
-		if(props==null || props.size()==0)
+		for(Object oKey : props.keySet())
 		{
-			props = PropUtil.loadProperties(_PROP_FILENAME);
+			Matcher m = pattRestApiKey.matcher(oKey.toString());
+			if(m.find())
+			{
+				String sApiKey = m.group(1);
+				String sPropKey = m.group(2);
+				
+				Properties propApi = getConfig(sApiKey);
+				
+				if(propApi==null)
+					propApi = new Properties();
+				
+				propApi.put(sPropKey, props.getProperty(oKey.toString()));
+				
+				addConfig(sApiKey, propApi);
+			}
 		}
 		
+		addUrlMapping(props);
+	}
+	
+	public void addConfig(String sConfigKey, Properties aProp)
+	{
+		mapConfigs.put(sConfigKey, aProp);
 	}
 	
 	public Properties getConfig(String sConfigKey)
 	{
 		return mapConfigs.get(sConfigKey);
 	}
+	
+	public Map<String, Properties> getAllConfig()
+	{
+		return mapConfigs;
+	}
+	
+	public Map<Integer, Map<String,String>> getMapLenUrls()
+	{
+		return mapLenUrls;
+	}
+	
+    private static void addUrlMapping(Properties aProps)
+    {
+    	if(aProps==null)
+    		return;
+    	    	
+        for(Object oKey : aProps.keySet())
+        {
+        	String sKey = oKey.toString();
+        	if(sKey.endsWith("."+RESTApiConfig._KEY_MAPPED_URL))
+        	{
+        		Matcher m = pattMappedUrlKey.matcher(sKey);
+	        	if(m.find())
+	        	{
+	        		String sRestApiKey = m.group(1);
+	        		String sURL = aProps.getProperty(sKey);
+	        		if(sURL!=null)
+	        		{
+	        			String[] sURLs = RESTApiUtil.getUrlSegments(sURL);
+	        			if(sURLs.length>0)
+	        			{
+	        				 Map<String, String> mapUrl = mapLenUrls.get(sURLs.length);
+	        				 if(mapUrl==null)
+	        				 {
+	        					 mapUrl = new HashMap<String, String>();
+	        				 }
+	        				 mapUrl.put(sURL, sRestApiKey);
+	        				 
+	        				 mapLenUrls.put(sURLs.length, mapUrl);
+	        			}	        			
+	        		}
+	        	}
+        	}
+        }    	
+    }
+
 }

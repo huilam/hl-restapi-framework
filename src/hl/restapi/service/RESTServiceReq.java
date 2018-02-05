@@ -1,6 +1,5 @@
 package hl.restapi.service;
 
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -11,10 +10,6 @@ import hl.common.http.RestApiUtil;
 
 public class RESTServiceReq {
 
-	public static String _RESTAPI_PLUGIN_IMPL_CLASSNAME = "restapi.plugin.implementation";
-	public static String _RESTAPI_ECHO_JSONATTR_PREFIX	= "restapi.echo.jsonattr.prefix";
-	public static String _RESTAPI_BASE_URL				= "restapi.baseurl";
-	
 	//
 	protected String urlPath 						= null;
 	protected HttpServletRequest httpServletReq		= null;
@@ -30,6 +25,21 @@ public class RESTServiceReq {
 
 	//
 	
+	public RESTServiceReq(HttpServletRequest aReq, Properties aConfigProp)
+	{
+		this.httpServletReq = aReq;
+		
+		Map<String, String> mapTemp = new HashMap<String,String>();
+		for(Object oKey : aConfigProp.keySet())
+		{
+			String sKey = oKey.toString();
+			mapTemp.put(sKey, aConfigProp.getProperty(sKey));
+		}	
+		
+		this.mapConfigs = mapTemp;
+		init(aReq, this.mapConfigs);
+	}
+
 	public RESTServiceReq(HttpServletRequest aReq, Map<String, String> aConfigMap)
 	{
 		this.httpServletReq = aReq;
@@ -44,11 +54,18 @@ public class RESTServiceReq {
 		
 		this.reqInputContentType = aReq.getContentType();
 		this.reqInputContentData = RestApiUtil.getReqContent(aReq);
-		
-		this.jsonEchoAttrs = extractEchoAttrs(aReq, aConfigMap);
-		
-		String sBaseUrl = aConfigMap.get(_RESTAPI_BASE_URL);
-		this.jsonUrlPathParams = extractPathParams(aReq.getPathInfo(), sBaseUrl);
+		//
+		String sJsonAttrEchoPrefix = aConfigMap.get(RESTApiConfig._KEY_ECHO_ATTR_PREFIX);
+		if(sJsonAttrEchoPrefix!=null)
+		{
+			this.jsonEchoAttrs = RESTApiUtil.extractEchoAttrs(aReq, this.reqInputContentData, sJsonAttrEchoPrefix);
+		}
+		//
+		String sBaseUrl = aConfigMap.get(RESTApiConfig._KEY_MAPPED_URL);
+		if(sBaseUrl!=null)
+		{
+			this.jsonUrlPathParams = RESTApiUtil.extractPathParams(aReq, sBaseUrl);
+		}
 	}
 	///
 	
@@ -160,63 +177,6 @@ public class RESTServiceReq {
 	{
 		return this.httpServletReq;
 	}
-	
-    private JSONObject extractEchoAttrs(HttpServletRequest aReq, Map<String, String> aConfigMap)
-    {
-    	JSONObject jsonAttrs = null;
-		String sJsonAttrEchoPrefix = aConfigMap.get(RESTApiService._RESTAPI_ECHO_JSONATTR_PREFIX);
-		if(sJsonAttrEchoPrefix!=null && sJsonAttrEchoPrefix.trim().length()>0)
-		{
-			jsonAttrs = new JSONObject();
-			//
-			if(this.reqInputContentData!=null && this.reqInputContentData.trim().startsWith("{"))
-			{
-				JSONObject jsonTmp = new JSONObject(this.reqInputContentData);
-				for(String sKey : jsonTmp.keySet())
-				{
-					if(sKey.startsWith(sJsonAttrEchoPrefix))
-					{
-						jsonAttrs.put(sKey, jsonTmp.get(sKey));
-					}
-				}
-			}
-			
-			// http headers
-			Enumeration<String> e = aReq.getHeaderNames();
-			while(e.hasMoreElements())
-			{
-				String sHeaderName = e.nextElement();
-				if(sHeaderName.startsWith(sJsonAttrEchoPrefix))
-				{
-					jsonAttrs.put(sHeaderName, aReq.getHeader(sHeaderName));
-				}
-			}
-			// query parameters
-			e = aReq.getParameterNames();
-			while(e.hasMoreElements())
-			{
-				String sParamName = e.nextElement();
-				if(sParamName.startsWith(sJsonAttrEchoPrefix))
-				{
-					String sParamVal = aReq.getParameter(sParamName);
-					jsonAttrs.put(sParamName, sParamVal);
-				}
-			}
-			
-		}
-		return jsonAttrs;
-    }
-    
-    private JSONObject extractPathParams(String aReqPathUrl, String aConfigPathUrl)
-    {
-    	JSONObject jsonParam = new JSONObject();
-    	
-    	
-    	
-    	
-		return jsonParam;
-    }
-    
 	
 	public String toString()
 	{
