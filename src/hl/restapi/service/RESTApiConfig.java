@@ -138,16 +138,17 @@ public class RESTApiConfig {
 	        		if(sURL!=null)
 	        		{
 	        			String[] sURLs = RESTApiUtil.getUrlSegments(sURL);
-	        			if(sURLs.length>0)
+	        			int iUrlSeg = sURLs.length;
+	        			if(iUrlSeg>0)
 	        			{
-	        				 Map<String, String> mapUrl = mapLenUrls.get(sURLs.length);
+	        				 Map<String, String> mapUrl = mapLenUrls.get(iUrlSeg);
 	        				 if(mapUrl==null)
 	        				 {
 	        					 mapUrl = new HashMap<String, String>();
 	        				 }
 	        				 mapUrl.put(sURL, sRestApiKey);
 	        				 
-	        				 mapLenUrls.put(sURLs.length, mapUrl);
+	        				 mapLenUrls.put(iUrlSeg, mapUrl);
 	        			}	        			
 	        		}
 	        	}

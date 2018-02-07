@@ -1,12 +1,8 @@
 package hl.restapi.service;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -29,7 +25,7 @@ public class RESTApiService extends HttpServlet {
 	private static RESTApiConfig apiConfig = new RESTApiConfig();
 
 	
-	private static String _VERSION = "0.0.2";
+	private static String _VERSION = "0.0.4";
 		
 	public static final String GET 		= "GET";
 	public static final String POST 	= "POST";
@@ -119,6 +115,10 @@ System.out.println();
 					}
 				}
 				
+				if(sRestApiKey!=null)
+				{
+					break;
+				}
 			}
 		}
 		
