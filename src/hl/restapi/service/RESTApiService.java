@@ -25,7 +25,7 @@ public class RESTApiService extends HttpServlet {
 	private static RESTApiConfig apiConfig = new RESTApiConfig();
 
 	
-	private static String _VERSION = "0.0.4";
+	private static String _VERSION = "0.0.5";
 		
 	public static final String GET 		= "GET";
 	public static final String POST 	= "POST";
@@ -168,7 +168,7 @@ System.out.println();
     
     public HttpResp postProcess(
     		IServicePlugin aPlugin, 
-    		RESTServiceReq aRestReq, HttpResp aHttpResp)
+    		RESTServiceReq aRestReq, HttpResp aHttpResp) throws RESTApiException
     {
     	if(aRestReq.getEchoJsonAttrs()!=null)
     	{
