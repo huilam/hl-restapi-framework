@@ -27,41 +27,39 @@ public class RESTServiceReq {
 	
 	public RESTServiceReq(HttpServletRequest aReq, Properties aConfigProp)
 	{
-		this.httpServletReq = aReq;
-		
-		Map<String, String> mapTemp = new HashMap<String,String>();
+		Map<String, String> mapTemp = new HashMap<String,String>();		
 		for(Object oKey : aConfigProp.keySet())
 		{
 			String sKey = oKey.toString();
 			mapTemp.put(sKey, aConfigProp.getProperty(sKey));
 		}	
-		
-		this.mapConfigs = mapTemp;
 		init(aReq, this.mapConfigs);
 	}
 
 	public RESTServiceReq(HttpServletRequest aReq, Map<String, String> aConfigMap)
 	{
-		this.httpServletReq = aReq;
-		this.mapConfigs = aConfigMap;
-			
 		init(aReq, aConfigMap);
 	}
 	
 	private void init(HttpServletRequest aReq, Map<String, String> aConfigMap)
 	{
+		this.httpServletReq = aReq;
+		
+		this.mapConfigs = new HashMap<String,String>();
+		this.mapConfigs.putAll(aConfigMap);
+		
 		this.urlPath = aReq.getPathInfo();  //without context root
 		
 		this.reqInputContentType = aReq.getContentType();
 		this.reqInputContentData = RestApiUtil.getReqContent(aReq);
 		//
-		String sJsonAttrEchoPrefix = aConfigMap.get(RESTApiConfig._KEY_ECHO_ATTR_PREFIX);
+		String sJsonAttrEchoPrefix = this.mapConfigs.get(RESTApiConfig._KEY_ECHO_ATTR_PREFIX);
 		if(sJsonAttrEchoPrefix!=null)
 		{
 			this.jsonEchoAttrs = RESTApiUtil.extractEchoAttrs(aReq, this.reqInputContentData, sJsonAttrEchoPrefix);
 		}
 		//
-		String sBaseUrl = aConfigMap.get(RESTApiConfig._KEY_MAPPED_URL);
+		String sBaseUrl = this.mapConfigs.get(RESTApiConfig._KEY_MAPPED_URL);
 		if(sBaseUrl!=null)
 		{
 			this.jsonUrlPathParams = RESTApiUtil.extractPathParams(aReq, sBaseUrl);
@@ -71,16 +69,16 @@ public class RESTServiceReq {
 	
 	public Map<String, String> getConfigMap()
 	{
-		if(mapConfigs==null)
+		if(this.mapConfigs==null)
 			return new HashMap<String, String>();
-		return mapConfigs;
+		return this.mapConfigs;
 	}
 	
 	public void addToConfigMap(Map<String, String> aConfigMap)
 	{
 		if(aConfigMap!=null)
 		{
-			mapConfigs.putAll(aConfigMap);
+			this.mapConfigs.putAll(aConfigMap);
 		}
 	}
 	
