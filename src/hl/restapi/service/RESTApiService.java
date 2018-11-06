@@ -34,8 +34,10 @@ public class RESTApiService extends HttpServlet {
 
     @Override
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException {
-
-    	boolean isAbout = request.getMethod().equals(GET) && request.getPathInfo().equals("/about");
+    	
+    	boolean isAbout = GET.equals(request.getMethod()) 
+    			&& "/about".equals(request.getPathInfo());
+    	
     	if(isAbout)
     	{
 			try {
@@ -51,7 +53,7 @@ public class RESTApiService extends HttpServlet {
     		processHttpMethods(request, response);
     	}
 	}
-
+    
     @Override
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException {
     	processHttpMethods(request, response);
@@ -67,7 +69,7 @@ public class RESTApiService extends HttpServlet {
     	processHttpMethods(request, response);
 	}
     
-    private JSONObject getAbout()
+    protected JSONObject getAbout()
     {
     	JSONObject json = new JSONObject();
     	json.put("restapi.framework", _VERSION);

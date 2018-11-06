@@ -46,7 +46,10 @@ public class RESTServiceReq {
 		this.httpServletReq = aReq;
 		
 		this.mapConfigs = new HashMap<String,String>();
-		this.mapConfigs.putAll(aConfigMap);
+		if(aConfigMap!=null)
+		{
+			this.mapConfigs.putAll(aConfigMap);
+		}
 		
 		this.urlPath = aReq.getPathInfo();  //without context root
 		
