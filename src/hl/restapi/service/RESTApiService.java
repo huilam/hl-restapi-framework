@@ -25,7 +25,7 @@ public class RESTApiService extends HttpServlet {
 	private static RESTApiConfig apiConfig = new RESTApiConfig();
 
 	
-	private static String _VERSION = "0.0.5";
+	private static String _VERSION = "0.0.6";
 		
 	public static final String GET 		= "GET";
 	public static final String POST 	= "POST";

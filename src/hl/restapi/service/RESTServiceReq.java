@@ -33,7 +33,7 @@ public class RESTServiceReq {
 			String sKey = oKey.toString();
 			mapTemp.put(sKey, aConfigProp.getProperty(sKey));
 		}	
-		init(aReq, this.mapConfigs);
+		init(aReq, mapTemp);
 	}
 
 	public RESTServiceReq(HttpServletRequest aReq, Map<String, String> aConfigMap)
