@@ -84,15 +84,7 @@ public class RESTApiService extends HttpServlet {
     	
     	HttpResp httpReq = new HttpResp();
     	httpReq.setHttp_status(HttpServletResponse.SC_NOT_FOUND);
- 
-/*
-System.out.println("sReqUri:"+sReqUri);
-System.out.println("sPathInfo:"+sPathInfo);
-System.out.println("sHttpMethod:"+sHttpMethod);
-System.out.println("sInputContentType:"+sInputContentType);
-System.out.println("sInputData:"+sInputData);
-System.out.println();
-*/    	
+  	
 		String[] sUrlPaths = RESTApiUtil.getUrlSegments(sPathInfo);
 		Map<String, String> mapUrl = apiConfig.getMapLenUrls().get(sUrlPaths.length);
 		
