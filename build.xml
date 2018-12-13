@@ -29,9 +29,12 @@
 
 	</target>
 		
-	<target name="jar" depends="compile">		
+	<target name="jar" depends="compile">	
+		<mkdir dir="${build}/version"/>
+		<touch file="${build}/version/${ant.project.name}_${buildno}"/>
 		<jar jarfile="${build}/${ant.project.name}_${buildno}.jar" basedir="${build}">
 			<include name="**/*.class"/>
+			<include name="version/${ant.project.name}_${buildno}"/>
 		</jar>
 	</target>
 	
