@@ -1,5 +1,6 @@
 package hl.restapi.service;
 
+import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -45,6 +46,16 @@ public class RESTServiceReq {
 	{
 		this.httpServletReq = aReq;
 		
+    	if(aReq.getCharacterEncoding()==null || aReq.getCharacterEncoding().trim().length()==0)
+    	{
+    		try {
+    			aReq.setCharacterEncoding("UTF-8");
+			} catch (UnsupportedEncodingException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+    	}
+
 		this.mapConfigs = new HashMap<String,String>();
 		if(aConfigMap!=null)
 		{
