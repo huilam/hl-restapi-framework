@@ -25,7 +25,7 @@ public class RESTApiService extends HttpServlet {
 	private static RESTApiConfig apiConfig = new RESTApiConfig();
 
 	
-	private static String _VERSION = "0.0.6";
+	private static String _VERSION = "0.0.7";
 		
 	public static final String GET 		= "GET";
 	public static final String POST 	= "POST";
@@ -36,7 +36,7 @@ public class RESTApiService extends HttpServlet {
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException {
     	
     	boolean isAbout = GET.equals(request.getMethod()) 
-    			&& "/about".equals(request.getPathInfo());
+    			&& "/about/framework".equals(request.getPathInfo());
     	
     	if(isAbout)
     	{
