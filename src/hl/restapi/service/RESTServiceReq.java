@@ -88,6 +88,11 @@ public class RESTServiceReq {
 	{
 		return this.reqUniqueID;
 	}
+
+	public void setReqUniqueID(String aUniqueID)
+	{
+		this.reqUniqueID = aUniqueID;
+	}
 	
 	public Map<String, String> getConfigMap()
 	{
