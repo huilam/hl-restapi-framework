@@ -12,6 +12,8 @@ import hl.common.http.RestApiUtil;
 public class RESTServiceReq {
 
 	//
+	protected String reqUniqueID					= null;
+	//
 	protected String urlPath 						= null;
 	protected HttpServletRequest httpServletReq		= null;
 	//
@@ -44,6 +46,7 @@ public class RESTServiceReq {
 	
 	private void init(HttpServletRequest aReq, Map<String, String> aConfigMap)
 	{
+		this.reqUniqueID = String.valueOf(System.nanoTime());
 		this.httpServletReq = aReq;
 		
     	if(aReq.getCharacterEncoding()==null || aReq.getCharacterEncoding().trim().length()==0)
@@ -80,6 +83,11 @@ public class RESTServiceReq {
 		}
 	}
 	///
+	
+	public String getReqUniqueID()
+	{
+		return this.reqUniqueID;
+	}
 	
 	public Map<String, String> getConfigMap()
 	{
