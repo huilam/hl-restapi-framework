@@ -35,12 +35,15 @@ import hl.common.PropUtil;
 public class RESTApiConfig {
 	
 	public static String _PROP_FILENAME 			= "restapi.properties";
+	
+	public static String _VAR_HTTP_METHOD			= ".<HTTP_METHOD>";
 	//
 	public static String _KEY_PLUGIN_CLASSNAME		= "plugin.implementation";
 	public static String _KEY_ECHO_ATTR_PREFIX		= "optional.echo.jsonattr.prefix";
 	public static String _KEY_MAPPED_URL			= "optional.mapped.url";
 	
-	public static String _KEY_JSONATTR_MANDATORY_CHECK	= "optional.<HTTP_METHOD>.jsonattr.mandatory.check";
+	public static String _KEY_MANDATORY_JSONATTRS	= "optional.mandatory.jsonattrs"+_VAR_HTTP_METHOD;
+	public static String _KEY_PROXY_URL				= "optional.proxy.url"+_VAR_HTTP_METHOD;
 	
 	//
 	public static String ERRCODE_PLUGINEXCEPTION	= "plugin_exception";

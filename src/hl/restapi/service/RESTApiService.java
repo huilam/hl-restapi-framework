@@ -37,7 +37,7 @@ public class RESTApiService extends HttpServlet {
 	public static final String DELETE	= "DELETE";
 	public static final String PUT 		= "PUT";
 	
-	private static Map<String, List<String>> listMandatoryCache = new HashMap<String, List<String>>();
+	private static Map<String, Map<String, String>> mapMandatoryCache = new HashMap<String, Map<String, String>>();
 
     @Override
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException {
@@ -137,18 +137,28 @@ public class RESTApiService extends HttpServlet {
 			try {
 				plugin = getPlugin(mapConfig);
 
-				httpReq = checkMandatoryJSONAttr(restReq, httpReq);
-				if(httpReq.getErrorMap().size()>0)
+				if(!httpReq.hasErrors())
+				{
+					httpReq = checkMandatoryJSONAttr(restReq, httpReq);
+				}
+				if(!httpReq.hasErrors())
+				{
+					httpReq = doProxy(restReq, httpReq);
+				}
+				if(!httpReq.hasErrors())
+				{
+					httpReq = postProcess(plugin, restReq, httpReq);
+				}
+
+				///
+				if(httpReq.hasErrors())
 				{
 					for(String sErrID : httpReq.getErrorMap().keySet())
 					{
 						JSONObject jsonErr = new JSONObject();
 						jsonErr.put(sErrID, httpReq.getErrorMap().get(sErrID));
+						jsonArrErrors.put(jsonErr);
 					}
-				}
-				else
-				{
-					httpReq = postProcess(plugin, restReq, httpReq);
 				}
 				
 			} catch (RESTApiException e) {
@@ -160,6 +170,8 @@ public class RESTApiService extends HttpServlet {
 				
 				httpReq = handleException(plugin, restReq, httpReq, e);	
 			}
+			
+			System.out.println("jsonArrErrors.length="+jsonArrErrors.length());
 			
 			if(jsonArrErrors.length()>0)
 			{
@@ -179,47 +191,71 @@ public class RESTApiService extends HttpServlet {
     }
         
     
+    public HttpResp doProxy(
+    		RESTServiceReq aRestReq, HttpResp aHttpResp) throws RESTApiException
+    {
+    	String sProxyUrl = getHttpMethodSpecifiedConfig(
+				aRestReq, RESTApiConfig._KEY_PROXY_URL);
+    	
+    	if(sProxyUrl!=null && sProxyUrl.trim().length()>0)
+    	{
+    		try {
+    			if(GET.equalsIgnoreCase(aRestReq.getHttpMethod()))
+    			{
+    				aHttpResp = RestApiUtil.httpGet(sProxyUrl);
+    			}
+    			else if(POST.equalsIgnoreCase(aRestReq.getHttpMethod()))
+    			{
+    				aHttpResp = RestApiUtil.httpPost(sProxyUrl, aRestReq.getInputContentType(), aRestReq.getInputContentData());
+    			}
+    			else if(DELETE.equalsIgnoreCase(aRestReq.getHttpMethod()))
+    			{
+    				aHttpResp = RestApiUtil.httpDelete(sProxyUrl, aRestReq.getInputContentType(), aRestReq.getInputContentData());
+    			}
+    			else if(PUT.equalsIgnoreCase(aRestReq.getHttpMethod()))
+    			{
+    				aHttpResp = RestApiUtil.httpPut(sProxyUrl, aRestReq.getInputContentType(), aRestReq.getInputContentData());
+    			}
+			} catch (IOException e) {
+				throw new RESTApiException("ProxyError", e);
+			}
+    	}
+    	
+    	return aHttpResp;
+    }
+    
     public HttpResp checkMandatoryJSONAttr(
     		RESTServiceReq aRestReq, HttpResp aHttpResp) throws RESTApiException
     {
-    	Map<String, String> mapConfig = aRestReq.getConfigMap();
+		List<String> listMandatory 	= new ArrayList<String>();
+
+    	String sMandatoryJsonAttrs = getHttpMethodSpecifiedConfig(
+										aRestReq, RESTApiConfig._KEY_MANDATORY_JSONATTRS);
     	
-    	String sJsonAttrMandatoryCheck = mapConfig.get(RESTApiConfig._KEY_JSONATTR_MANDATORY_CHECK);
-		if(sJsonAttrMandatoryCheck!=null && sJsonAttrMandatoryCheck.trim().length()>0)
+		if(sMandatoryJsonAttrs!=null && sMandatoryJsonAttrs.trim().length()>0)
 		{
-	    	sJsonAttrMandatoryCheck = sJsonAttrMandatoryCheck.replaceAll("<HTTP_METHOD>", aRestReq.getHttpMethod());
-	    	
-			List<String> listMandatory = listMandatoryCache.get(sJsonAttrMandatoryCheck);
-			if(listMandatory==null)
-			{
-				listMandatory = new ArrayList<String>();
-				
-				StringTokenizer tk = new StringTokenizer(sJsonAttrMandatoryCheck, ",");
-				while(tk.hasMoreTokens())
-				{
-					String sJsonAttrName = tk.nextToken();
-					listMandatory.add(sJsonAttrName);
-				}
-				
-				if(listMandatory.size()>0)
-				{
-					listMandatoryCache.put(sJsonAttrMandatoryCheck, listMandatory);
-				}
-			}
+			System.out.println("sMandatoryJsonAttrs="+sMandatoryJsonAttrs);
 			
+			StringTokenizer tk = new StringTokenizer(sMandatoryJsonAttrs, ",");
+			while(tk.hasMoreTokens())
+			{
+				String sJsonAttrName = tk.nextToken();
+				listMandatory.add(sJsonAttrName.trim());
+			}
+					
 			if(listMandatory.size()>0)
 			{
 				String sInputContent = aRestReq.getInputContentData();
 				if(sInputContent!=null)
 				{
 					sInputContent = sInputContent.trim();
-					boolean isJsonObj = sInputContent.startsWith("{") && sInputContent.startsWith("}");
+					boolean isJsonObj = sInputContent.startsWith("{") && sInputContent.endsWith("}");
 					if(isJsonObj)
 					{
 						sInputContent = "[" + sInputContent + "]";
 					}
 					
-					boolean isJsonArr = sInputContent.startsWith("[") && sInputContent.startsWith("]");
+					boolean isJsonArr = sInputContent.startsWith("[") && sInputContent.endsWith("]");
 					if(isJsonArr)
 					{
 						JSONArray jsonArr = new JSONArray(sInputContent);
@@ -227,12 +263,12 @@ public class RESTApiService extends HttpServlet {
 						for(int i=0; i<jsonArr.length(); i++)
 						{
 							JSONObject json = jsonArr.optJSONObject(i);
-							for(String sMandatoryAttr : listMandatory)
+							
+							for(String sMandatoryAttrKey : listMandatory)
 							{
-								Object sJsonVal = json.opt(sMandatoryAttr.trim());
-								if(sJsonVal==null)
+								if(!json.has(sMandatoryAttrKey))
 								{
-									aHttpResp.addToErrorMap(sMandatoryAttr, "MANDATORY");
+									aHttpResp.addToErrorMap(sMandatoryAttrKey, "MANDATORY");
 								}
 							}
 						}
@@ -245,6 +281,33 @@ public class RESTApiService extends HttpServlet {
     	
     	return aHttpResp;
     }
+    
+    private String getHttpMethodSpecifiedConfig(RESTServiceReq aRestReq, String aConfigKey)
+    {
+    	if(aConfigKey==null)
+    		return null;
+    	
+    	String sValue = null;
+    	
+    	Map<String, String> mapConfig = aRestReq.getConfigMap();
+    	
+    	if(aConfigKey.indexOf(RESTApiConfig._VAR_HTTP_METHOD)>-1)
+    	{
+    		String sTmpKey = aConfigKey.replaceAll("\\"+RESTApiConfig._VAR_HTTP_METHOD, "");
+    		//System.out.println("sTmpKeyKey="+sTmpKey);
+    		
+    		sValue = mapConfig.get(sTmpKey);
+    	
+    		if(sValue==null)
+    		{
+	    		sTmpKey = sTmpKey + "."+aRestReq.getHttpMethod().toUpperCase();
+	    		//System.out.println("sTmpKey="+sTmpKey);
+	    		sValue = mapConfig.get(sTmpKey);
+    		}
+    	}
+    	return sValue;
+    }
+    
     
     public HttpResp postProcess(
     		IServicePlugin aPlugin, 
