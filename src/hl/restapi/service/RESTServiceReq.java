@@ -11,6 +11,7 @@ import hl.common.http.RestApiUtil;
 
 public class RESTServiceReq {
 
+	protected String restApiKey						= null;
 	//
 	protected String reqUniqueID					= null;
 	//
@@ -30,6 +31,9 @@ public class RESTServiceReq {
 	
 	public RESTServiceReq(HttpServletRequest aReq, Properties aConfigProp)
 	{
+		if(aConfigProp==null)
+			aConfigProp = new Properties();
+		
 		Map<String, String> mapTemp = new HashMap<String,String>();		
 		for(Object oKey : aConfigProp.keySet())
 		{
@@ -83,6 +87,16 @@ public class RESTServiceReq {
 		}
 	}
 	///
+	
+	public String getRestApiKey()
+	{
+		return this.restApiKey;
+	}
+
+	public void setRestApiKey(String aRestApiKey)
+	{
+		this.restApiKey = aRestApiKey;
+	}
 	
 	public String getReqUniqueID()
 	{

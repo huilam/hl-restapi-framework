@@ -39,6 +39,9 @@ public class RESTApiConfig {
 	public static String _KEY_PLUGIN_CLASSNAME		= "plugin.implementation";
 	public static String _KEY_ECHO_ATTR_PREFIX		= "optional.echo.jsonattr.prefix";
 	public static String _KEY_MAPPED_URL			= "optional.mapped.url";
+	
+	public static String _KEY_JSONATTR_MANDATORY_CHECK	= "optional.<HTTP_METHOD>.jsonattr.mandatory.check";
+	
 	//
 	public static String ERRCODE_PLUGINEXCEPTION	= "plugin_exception";
 	public static String ERRCODE_INVALIDFORMAT		= "invalid_format_exception";
