@@ -153,7 +153,7 @@ public class RESTApiService extends HttpServlet {
 		
 		
 		try {
-			RestApiUtil.processHttpResp(res, httpReq.getHttp_status(), httpReq.getContent_type(), httpReq.getContent_data());
+			RestApiUtil.processHttpResp(res, httpReq, -1);
 		} catch (IOException ex) {
 			throw new ServletException(ex.getClass().getSimpleName(), ex);
 		}
