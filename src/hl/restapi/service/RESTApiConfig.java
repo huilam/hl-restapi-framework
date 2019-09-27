@@ -46,6 +46,8 @@ public class RESTApiConfig {
 	public static String _KEY_PROXY_URL				= "optional.proxy.url"+_VAR_HTTP_METHOD;
 	
 	//
+	public static String ERRCODE_MANDATORY			= "mandatory";
+	
 	public static String ERRCODE_PLUGINEXCEPTION	= "plugin_exception";
 	public static String ERRCODE_INVALIDFORMAT		= "invalid_format_exception";
 	

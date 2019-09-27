@@ -8,6 +8,6 @@ public interface IServicePlugin {
 	
 	public HttpResp postProcess(RESTServiceReq aRestReq, HttpResp aHttpResp) throws RESTApiException;
 	
-	public HttpResp handleException(RESTServiceReq aRestReq, HttpResp aHttpResp, RESTApiException aException);
+	public HttpResp handleException(RESTServiceReq aRestReq, HttpResp aHttpResp, RESTApiException aException) throws RESTApiException;
 	
 }

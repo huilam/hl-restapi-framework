@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.StringTokenizer;
 
 import javax.servlet.ServletException;
@@ -16,6 +15,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import hl.common.CommonException;
 import hl.common.http.HttpResp;
 import hl.common.http.RestApiUtil;
 import hl.restapi.plugins.IServicePlugin;
@@ -37,7 +37,7 @@ public class RESTApiService extends HttpServlet {
 	public static final String DELETE	= "DELETE";
 	public static final String PUT 		= "PUT";
 	
-	private static Map<String, Map<String, String>> mapMandatoryCache = new HashMap<String, Map<String, String>>();
+	private static Map<String, List<String>> mapMandatoryCache = new HashMap<String, List<String>>();
 
     @Override
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException {
@@ -87,7 +87,7 @@ public class RESTApiService extends HttpServlet {
     {
     	String sPathInfo 			= req.getPathInfo();  //{crudkey}/xx/xx
     	
-    	JSONArray jsonArrErrors 	= new JSONArray();
+    	List<CommonException> listException = new ArrayList<CommonException>();
     	
     	HttpResp httpReq = new HttpResp();
     	httpReq.setHttp_status(HttpServletResponse.SC_NOT_FOUND);
@@ -143,7 +143,7 @@ public class RESTApiService extends HttpServlet {
 				}
 				if(!httpReq.hasErrors())
 				{
-					httpReq = doProxy(restReq, httpReq);
+					httpReq = doForwardProxy(restReq, httpReq);
 				}
 				if(!httpReq.hasErrors())
 				{
@@ -153,28 +153,35 @@ public class RESTApiService extends HttpServlet {
 				///
 				if(httpReq.hasErrors())
 				{
+					Map<String, String> map = httpReq.getErrorMap();
+					
 					for(String sErrID : httpReq.getErrorMap().keySet())
 					{
-						JSONObject jsonErr = new JSONObject();
-						jsonErr.put(sErrID, httpReq.getErrorMap().get(sErrID));
-						jsonArrErrors.put(jsonErr);
+						CommonException e = new CommonException(sErrID, map.get(sErrID));
+						listException.add(e);
 					}
 				}
 				
 			} catch (RESTApiException e) {
 				
-				JSONObject json = new JSONObject();
-				json.put(e.getErrorCode(), e.getErrorMsg());
-
-				jsonArrErrors.put(json);
-				
-				httpReq = handleException(plugin, restReq, httpReq, e);	
+				try {
+					httpReq = handleException(plugin, restReq, httpReq, e);
+				} catch (RESTApiException e1) {
+					listException.add(e1);
+				}
 			}
 			
-			System.out.println("jsonArrErrors.length="+jsonArrErrors.length());
-			
-			if(jsonArrErrors.length()>0)
+			if(listException.size()>0)
 			{
+				JSONArray jsonArrErrors = new JSONArray();
+				
+				for(CommonException ce : listException)
+				{
+					JSONObject jsonE = new JSONObject();
+					jsonE.put(ce.getErrorCode(), ce.getErrorMsg());
+					jsonArrErrors.put(jsonE);
+				}
+				
 				JSONObject jsonError = new JSONObject();
 				jsonError.put("errors", jsonArrErrors);
 				httpReq.setContent_type(TYPE_APP_JSON);
@@ -191,7 +198,7 @@ public class RESTApiService extends HttpServlet {
     }
         
     
-    public HttpResp doProxy(
+    public HttpResp doForwardProxy(
     		RESTServiceReq aRestReq, HttpResp aHttpResp) throws RESTApiException
     {
     	String sProxyUrl = getHttpMethodSpecifiedConfig(
@@ -234,13 +241,19 @@ public class RESTApiService extends HttpServlet {
     	
 		if(sMandatoryJsonAttrs!=null && sMandatoryJsonAttrs.trim().length()>0)
 		{
-			System.out.println("sMandatoryJsonAttrs="+sMandatoryJsonAttrs);
+			//System.out.println("sMandatoryJsonAttrs="+sMandatoryJsonAttrs);
 			
-			StringTokenizer tk = new StringTokenizer(sMandatoryJsonAttrs, ",");
-			while(tk.hasMoreTokens())
+			listMandatory = mapMandatoryCache.get(sMandatoryJsonAttrs);
+			
+			if(listMandatory==null || listMandatory.size()==0)
 			{
-				String sJsonAttrName = tk.nextToken();
-				listMandatory.add(sJsonAttrName.trim());
+				listMandatory = new ArrayList<String>();
+				StringTokenizer tk = new StringTokenizer(sMandatoryJsonAttrs, ",");
+				while(tk.hasMoreTokens())
+				{
+					String sJsonAttrName = tk.nextToken();
+					listMandatory.add(sJsonAttrName.trim());
+				}
 			}
 					
 			if(listMandatory.size()>0)
@@ -268,7 +281,7 @@ public class RESTApiService extends HttpServlet {
 							{
 								if(!json.has(sMandatoryAttrKey))
 								{
-									aHttpResp.addToErrorMap(sMandatoryAttrKey, "MANDATORY");
+									aHttpResp.addToErrorMap(sMandatoryAttrKey, RESTApiConfig.ERRCODE_MANDATORY);
 								}
 							}
 						}
@@ -336,7 +349,7 @@ public class RESTApiService extends HttpServlet {
     
     public HttpResp handleException(
     		IServicePlugin aPlugin, 
-    		RESTServiceReq aRestReq , HttpResp aHttpResp, RESTApiException aException)
+    		RESTServiceReq aRestReq , HttpResp aHttpResp, RESTApiException aException) throws RESTApiException 
     {
     	if(aPlugin==null)
     		return aHttpResp;
