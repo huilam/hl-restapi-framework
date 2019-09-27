@@ -154,12 +154,24 @@ public class RESTApiService extends HttpServlet {
 				if(httpReq.hasErrors())
 				{
 					Map<String, String> map = httpReq.getErrorMap();
-					
-					for(String sErrID : httpReq.getErrorMap().keySet())
+					for(String sErrID : map.keySet())
 					{
-						CommonException e = new CommonException(sErrID, map.get(sErrID));
-						listException.add(e);
+						RESTApiException e = new RESTApiException(sErrID, map.get(sErrID));
+						try {
+							httpReq = handleException(plugin, restReq, httpReq, e);
+						} catch (RESTApiException e1) {
+							listException.add(e1);
+							e = null;
+						}
+						//unhandled
+						if(e!=null)
+						{
+							listException.add(e);
+						}
 					}
+					
+					
+					
 				}
 				
 			} catch (RESTApiException e) {
@@ -168,6 +180,12 @@ public class RESTApiService extends HttpServlet {
 					httpReq = handleException(plugin, restReq, httpReq, e);
 				} catch (RESTApiException e1) {
 					listException.add(e1);
+					e = null;
+				}
+				
+				if(e!=null)
+				{
+					listException.add(e);
 				}
 			}
 			
