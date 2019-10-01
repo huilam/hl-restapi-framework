@@ -150,43 +150,27 @@ public class RESTApiService extends HttpServlet {
 					httpReq = postProcess(plugin, restReq, httpReq);
 				}
 
+			} catch (RESTApiException e) {
+				
+				try {
+					httpReq = handleException(plugin, restReq, httpReq, e);
+				} catch (RESTApiException e1) {
+					httpReq.addToErrorMap(e1.getErrorCode(), e1.getMessage());
+				}
+			}
+			finally
+			{
 				///
 				if(httpReq.hasErrors())
 				{
 					Map<String, String> map = httpReq.getErrorMap();
 					for(String sErrID : map.keySet())
 					{
-						RESTApiException e = new RESTApiException(sErrID, map.get(sErrID));
-						try {
-							httpReq = handleException(plugin, restReq, httpReq, e);
-						} catch (RESTApiException e1) {
-							listException.add(e1);
-							e = null;
-						}
-						//unhandled
-						if(e!=null)
-						{
-							listException.add(e);
-						}
+						String sErrReason = map.get(sErrID);
+						listException.add(new RESTApiException(sErrID, sErrReason));
 					}
-					
-					
-					
 				}
 				
-			} catch (RESTApiException e) {
-				
-				try {
-					httpReq = handleException(plugin, restReq, httpReq, e);
-				} catch (RESTApiException e1) {
-					listException.add(e1);
-					e = null;
-				}
-				
-				if(e!=null)
-				{
-					listException.add(e);
-				}
 			}
 			
 			if(listException.size()>0)
