@@ -1,10 +1,13 @@
 package hl.restapi.service;
 
+import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.StringTokenizer;
 
 import javax.servlet.ServletException;
@@ -16,6 +19,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import hl.common.CommonException;
+import hl.common.FileUtil;
 import hl.common.http.HttpResp;
 import hl.common.http.RestApiUtil;
 import hl.restapi.plugins.IServicePlugin;
@@ -26,6 +30,7 @@ public class RESTApiService extends HttpServlet {
 	
 	protected final static String TYPE_APP_JSON 	= "application/json"; 
 	protected final static String TYPE_PLAINTEXT 	= "text/plain"; 
+	protected final static String TYPE_OCTET_STREAM = "octet-stream";
 	
 	private static RESTApiConfig apiConfig = new RESTApiConfig();
 
@@ -82,6 +87,46 @@ public class RESTApiService extends HttpServlet {
     	json.put("restapi.framework", _VERSION);
     	return json;
     }
+    
+    private void serveWebContent(Properties apiProp, HttpServletRequest req, HttpServletResponse res)
+    {
+    	if(!"true".equalsIgnoreCase(apiProp.getProperty(RESTApiConfig._KEY_STATIC_WEB)))
+    		return;
+    	
+		File file = new File(req.getPathTranslated());
+		if(file.isFile())
+		{
+			byte[] byteFile;
+			try {
+				byteFile = FileUtil.getBytes(file);
+				
+				HttpResp httpResp = new HttpResp();
+				httpResp.setHttp_status(HttpServletResponse.SC_OK);
+				
+				boolean isText = Files.probeContentType(file.toPath()).startsWith("text");
+				if(isText)
+				{
+					httpResp.setContent_type(TYPE_PLAINTEXT);
+					httpResp.setContent_data(new String(byteFile));
+				}
+				else
+				{
+					//byte
+					httpResp.setContent_type(TYPE_OCTET_STREAM);
+					httpResp.setContent_bytes(byteFile);
+				}
+				
+				
+				RestApiUtil.processHttpResp(res,httpResp, -1);
+				
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			
+		}
+    	
+    }
 
     private void processHttpMethods(HttpServletRequest req, HttpServletResponse res) throws ServletException
     {
@@ -93,7 +138,15 @@ public class RESTApiService extends HttpServlet {
     	httpReq.setHttp_status(HttpServletResponse.SC_NOT_FOUND);
   	
 		String[] sUrlPaths = RESTApiUtil.getUrlSegments(sPathInfo);
-		Map<String, String> mapUrl = apiConfig.getMapLenUrls().get(sUrlPaths.length);
+		int iUrlLen = sUrlPaths.length;
+		
+		File file = new File(req.getPathTranslated());
+		if(file.isFile())
+		{
+			iUrlLen--;
+		}
+    	
+		Map<String, String> mapUrl = apiConfig.getMapLenUrls().get(iUrlLen);
 		
 		String sRestApiKey = null;
 		
@@ -127,16 +180,19 @@ public class RESTApiService extends HttpServlet {
 		if(sRestApiKey!=null)
 		{
 			//
-			RESTServiceReq restReq = new RESTServiceReq(req, apiConfig.getConfig(sRestApiKey));
-			restReq.setRestApiKey(sRestApiKey);
-
-			Map<String, String> mapConfig = restReq.getConfigMap();
+			Properties propApiConfig = apiConfig.getConfig(sRestApiKey);
+ 			serveWebContent(propApiConfig, req, res);
 			
+			RESTServiceReq restReq = new RESTServiceReq(req, propApiConfig);
+			restReq.setRestApiKey(sRestApiKey);
+			//
+   		
+			Map<String, String> mapConfig = restReq.getConfigMap();
 			//
 			IServicePlugin plugin = null;
 			try {
 				plugin = getPlugin(mapConfig);
-
+				
 				if(!httpReq.hasErrors())
 				{
 					httpReq = checkMandatoryJSONAttr(restReq, httpReq);

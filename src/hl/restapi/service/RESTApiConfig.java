@@ -44,7 +44,7 @@ public class RESTApiConfig {
 	
 	public static String _KEY_MANDATORY_JSONATTRS	= "optional.mandatory.jsonattrs"+_VAR_HTTP_METHOD;
 	public static String _KEY_PROXY_URL				= "optional.proxy.url"+_VAR_HTTP_METHOD;
-	
+	public static String _KEY_STATIC_WEB 			= "optional.static.web";
 	//
 	public static String ERRCODE_MANDATORY			= "mandatory";
 	
