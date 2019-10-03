@@ -93,39 +93,7 @@ public class RESTApiService extends HttpServlet {
     	if(!"true".equalsIgnoreCase(apiProp.getProperty(RESTApiConfig._KEY_STATIC_WEB)))
     		return;
     	
-		File file = new File(req.getPathTranslated());
-		if(file.isFile())
-		{
-			byte[] byteFile;
-			try {
-				byteFile = FileUtil.getBytes(file);
-				
-				HttpResp httpResp = new HttpResp();
-				httpResp.setHttp_status(HttpServletResponse.SC_OK);
-				
-				boolean isText = Files.probeContentType(file.toPath()).startsWith("text");
-				if(isText)
-				{
-					httpResp.setContent_type(TYPE_PLAINTEXT);
-					httpResp.setContent_data(new String(byteFile));
-				}
-				else
-				{
-					//byte
-					httpResp.setContent_type(TYPE_OCTET_STREAM);
-					httpResp.setContent_bytes(byteFile);
-				}
-				
-				
-				RestApiUtil.processHttpResp(res,httpResp, -1);
-				
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-			
-		}
-    	
+    	RestApiUtil.serveStaticWeb(req, res);
     }
 
     private void processHttpMethods(HttpServletRequest req, HttpServletResponse res) throws ServletException
