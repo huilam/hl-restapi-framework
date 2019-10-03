@@ -2,7 +2,6 @@ package hl.restapi.service;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -19,7 +18,6 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import hl.common.CommonException;
-import hl.common.FileUtil;
 import hl.common.http.HttpResp;
 import hl.common.http.RestApiUtil;
 import hl.restapi.plugins.IServicePlugin;
@@ -88,12 +86,12 @@ public class RESTApiService extends HttpServlet {
     	return json;
     }
     
-    private void serveWebContent(Properties apiProp, HttpServletRequest req, HttpServletResponse res)
+    private boolean serveWebContent(Properties apiProp, HttpServletRequest req, HttpServletResponse res)
     {
     	if(!"true".equalsIgnoreCase(apiProp.getProperty(RESTApiConfig._KEY_STATIC_WEB)))
-    		return;
+    		return false;
     	
-    	RestApiUtil.serveStaticWeb(req, res);
+    	return RestApiUtil.serveStaticWeb(req, res);
     }
 
     private void processHttpMethods(HttpServletRequest req, HttpServletResponse res) throws ServletException
@@ -149,7 +147,10 @@ public class RESTApiService extends HttpServlet {
 		{
 			//
 			Properties propApiConfig = apiConfig.getConfig(sRestApiKey);
- 			serveWebContent(propApiConfig, req, res);
+ 			if(serveWebContent(propApiConfig, req, res))
+ 			{
+ 				return;
+ 			}
 			
 			RESTServiceReq restReq = new RESTServiceReq(req, propApiConfig);
 			restReq.setRestApiKey(sRestApiKey);
