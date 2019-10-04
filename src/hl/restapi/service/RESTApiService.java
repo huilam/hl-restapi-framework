@@ -106,10 +106,15 @@ public class RESTApiService extends HttpServlet {
 		String[] sUrlPaths = RESTApiUtil.getUrlSegments(sPathInfo);
 		int iUrlLen = sUrlPaths.length;
 		
-		File file = new File(req.getPathTranslated());
-		if(file.isFile())
+		String sActualPath = req.getPathTranslated();
+		if(sActualPath!=null)
 		{
-			iUrlLen--;
+			File file = new File(sActualPath);
+			if(file.isFile())
+			{
+				iUrlLen--;
+			}
+			file = null;
 		}
     	
 		Map<String, String> mapUrl = apiConfig.getMapLenUrls().get(iUrlLen);
