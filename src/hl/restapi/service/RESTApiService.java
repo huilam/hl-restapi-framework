@@ -94,59 +94,78 @@ public class RESTApiService extends HttpServlet {
     	return RestApiUtil.serveStaticWeb(req, res);
     }
 
+    private String getRestApiKey(final HttpServletRequest req)
+    {
+    	
+    	if(req==null)
+    		return null;
+
+    	String sUrlPath = req.getPathInfo();
+    	
+    	if(sUrlPath==null)
+    		return null;
+    	
+		File f = RestApiUtil.getWebContentAsFile(req);
+		boolean isWebContent = (f!=null) && f.isFile();
+    	
+       	String sRestApiKey = null;
+       	
+       	String[] sUrlPaths = RESTApiUtil.getUrlSegments(sUrlPath);
+		int iUrlLen = sUrlPaths.length;
+    			
+		
+		while(sRestApiKey==null && iUrlLen>0)
+		{
+		
+			Map<String, String> mapUrl = apiConfig.getMapLenUrls().get(iUrlLen);
+			
+			if(mapUrl!=null)
+			{
+				for(String sMapUrl : mapUrl.keySet())
+				{
+					sRestApiKey = mapUrl.get(sMapUrl);
+					String[] sMapUrls = RESTApiUtil.getUrlSegments(sMapUrl);
+					for(int i=0; i<sMapUrls.length; i++)
+					{
+						if(sMapUrls[i].startsWith("{") && sMapUrls[i].endsWith("}"))
+						{
+							//ok, path param
+						}
+						else if(!sMapUrls[i].equals(sUrlPaths[i]))
+						{
+							sRestApiKey = null;
+							break;
+						}
+					}
+					
+					if(sRestApiKey!=null)
+					{
+						break;
+					}
+				}
+			}
+			
+			if(isWebContent)
+			{
+				iUrlLen--;
+			}
+			else
+			{
+				break;
+			}
+			
+		}
+		return sRestApiKey;
+    }
+    
     private void processHttpMethods(HttpServletRequest req, HttpServletResponse res) throws ServletException
     {
-    	String sPathInfo 			= req.getPathInfo();  //{crudkey}/xx/xx
-    	
     	List<CommonException> listException = new ArrayList<CommonException>();
     	
     	HttpResp httpReq = new HttpResp();
     	httpReq.setHttp_status(HttpServletResponse.SC_NOT_FOUND);
   	
-		String[] sUrlPaths = RESTApiUtil.getUrlSegments(sPathInfo);
-		int iUrlLen = sUrlPaths.length;
-		
-		String sActualPath = req.getPathTranslated();
-		if(sActualPath!=null)
-		{
-			File file = new File(sActualPath);
-			if(file.isFile())
-			{
-				iUrlLen--;
-			}
-			file = null;
-		}
-    	
-		Map<String, String> mapUrl = apiConfig.getMapLenUrls().get(iUrlLen);
-		
-		String sRestApiKey = null;
-		
-		if(mapUrl!=null)
-		{
-			for(String sMapUrl : mapUrl.keySet())
-			{
-				sRestApiKey = mapUrl.get(sMapUrl);
-				String[] sMapUrls = RESTApiUtil.getUrlSegments(sMapUrl);
-				for(int i=0; i<sMapUrls.length; i++)
-				{
-					if(sMapUrls[i].startsWith("{") && sMapUrls[i].endsWith("}"))
-					{
-						//ok, path param
-					}
-					else if(!sMapUrls[i].equals(sUrlPaths[i]))
-					{
-						sRestApiKey = null;
-						break;
-					}
-				}
-				
-				if(sRestApiKey!=null)
-				{
-					break;
-				}
-			}
-		}
-		
+		String sRestApiKey = getRestApiKey(req);
 		
 		if(sRestApiKey!=null)
 		{
