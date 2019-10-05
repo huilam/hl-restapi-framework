@@ -1,0 +1,63 @@
+<HTML>
+<HEAD>
+<script src="js/HLCamUtils.js"></script>
+<script type="text/javascript" >
+	var WEBCAMUTIL 	= null;
+	
+	function setVideoSize(w, h)
+	{
+		var vid 	= document.getElementById("videoElement");
+		vid.width 	= w;
+		vid.height 	= h;
+	}
+	
+	function grabVideoFrame()
+	{
+		var vid = document.getElementById("videoElement");
+		var imgCaptured 	= document.getElementById("imgCaptured");
+		imgCaptured.width 	= vid.width;
+		imgCaptured.height 	= vid.height;
+
+		var imgGrab 	= WEBCAMUTIL.grabFrameAsImg();
+		imgCaptured.src = imgGrab.src;
+		
+		console.log("imgCaptured:"+imgCaptured.width+"x"+imgCaptured.height);
+	}
+	
+	window.addEventListener("DOMContentLoaded", 
+		function() 
+		{
+			WEBCAMUTIL = new HLCamUtils("videoElement");		
+			WEBCAMUTIL.initWebcam();
+		}
+		,false);
+	
+</script>
+</HEAD>
+<BODY>
+	<table>
+		<tr>
+			<td colspan="2">
+				<img id="imgCaptured" style="display:none;"/>
+				<video id="videoElement" width='320' height='240' muted autoplay></video>
+			</td>
+		</tr>
+		<tr>
+			<td colspan="2">
+				Resolution:
+				<SELECT id="selVidSize">
+					<OPTION onclick="javascript:setVideoSize(120,90)">120x90</OPTION>
+					<OPTION onclick="javascript:setVideoSize(160,120)">160x120</OPTION>
+					<OPTION onclick="javascript:setVideoSize(320,240)" selected>320x240</OPTION>
+					<OPTION onclick="javascript:setVideoSize(640,480)">640x480</OPTION>
+				</SELECT>
+				<input type="button" onclick="grabVideoFrame();" id="btnGrab" value="Grab Frame">
+			</td>
+		</tr>
+		
+	</table>
+	
+	<input type="button" onclick="" value="Clear">
+	
+</BODY>
+</HTML>
