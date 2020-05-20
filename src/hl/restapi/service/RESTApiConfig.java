@@ -45,12 +45,14 @@ public class RESTApiConfig {
 	public static String _KEY_MANDATORY_JSONATTRS	= "optional.mandatory.jsonattrs"+_VAR_HTTP_METHOD;
 	public static String _KEY_PROXY_URL				= "optional.proxy.url"+_VAR_HTTP_METHOD;
 	public static String _KEY_STATIC_WEB 			= "optional.static.web";
+	public static String _KEY_DEBUG					= "debug";
+	
 	//
 	public static String ERRCODE_MANDATORY			= "mandatory";
 	
 	public static String ERRCODE_PLUGINEXCEPTION	= "plugin_exception";
 	public static String ERRCODE_INVALIDFORMAT		= "invalid_format_exception";
-	
+
 	//
 	private static Map<Integer, Map<String, String>> mapLenUrls = new HashMap<Integer, Map<String, String>>();
 	private static Pattern pattMappedUrlKey 	= Pattern.compile("restapi\\.(.+?)\\."+RESTApiConfig._KEY_MAPPED_URL); 	
@@ -116,6 +118,27 @@ public class RESTApiConfig {
 	public Properties getConfig(String sConfigKey)
 	{
 		return mapConfigs.get(sConfigKey);
+	}
+	
+	public void setDebug(String sConfigKey, boolean isDebug)
+	{
+		Properties p = mapConfigs.get(sConfigKey);
+		if(p!=null)
+		{
+			p.setProperty("debug", Boolean.valueOf(isDebug).toString());
+		}
+	}
+	
+	public boolean isDebug(String sConfigKey)
+	{
+		boolean isDebugMode = false;
+		Properties p = mapConfigs.get(sConfigKey);
+		if(p!=null)
+		{
+			return Boolean.valueOf(p.getProperty("debug", "false"));
+		}
+		
+		return isDebugMode;
 	}
 	
 	public Map<String, Properties> getAllConfig()
