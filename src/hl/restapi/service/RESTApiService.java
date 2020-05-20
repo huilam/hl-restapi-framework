@@ -265,6 +265,7 @@ public class RESTApiService extends HttpServlet {
 		
 		if(sRestApiKey!=null)
 		{
+			isDebug = apiConfig.isDebug(sRestApiKey) || logger.isLoggable(Level.FINE);
 			//
 			Properties propApiConfig = apiConfig.getConfig(sRestApiKey);
  			if(serveWebContent(propApiConfig, req, res))
@@ -285,7 +286,6 @@ public class RESTApiService extends HttpServlet {
 			//
 			IServicePlugin plugin = null;
 			try {
-				isDebug = apiConfig.isDebug(sRestApiKey) || logger.isLoggable(Level.FINE);
 				
 				String sReqUniqueID = String.valueOf(System.nanoTime());
 				restReq.setReqUniqueID(sReqUniqueID);
