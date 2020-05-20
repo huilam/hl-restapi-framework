@@ -67,8 +67,27 @@ public class RESTApiService extends HttpServlet {
     	if(isAbout)
     	{
     		JSONObject jsonAbout = getAbout();
-    		
-    		if(sPath.equals("/about/framework/sysinfo"))
+    		 
+    		if(sPath.startsWith("/about/framework/debug"))
+    		{
+	        	Matcher m = pattDebugMode.matcher(sPath);
+	        	if(m.find())
+	        	{
+	        		String sApiKey = m.group(1);
+	        		boolean isDebug = "true".equalsIgnoreCase(m.group(2));
+	        		apiConfig.setDebug(sApiKey, isDebug);
+	        	}
+        		try {
+    				RestApiUtil.processHttpResp(
+    						response, 
+    						HttpServletResponse.SC_OK, 
+    						TYPE_APP_JSON, 
+    						getDebugInfo().toString());
+    			} catch (IOException e) {
+    				throw new ServletException(e);
+    			}  			
+    		}
+    		else if(sPath.equals("/about/framework/sysinfo"))
     		{	
     			jsonAbout.put("SysInfo", getSysInfoJson());
     		}
@@ -100,32 +119,8 @@ public class RESTApiService extends HttpServlet {
 			}
     	}
     	else
-    	{
-    		boolean isDebugInfo = GET.equals(sHttpMethod) && sPath.startsWith("/about/framework/debug");
-     		
-     		if(isDebugInfo)
-     		{
-	        	Matcher m = pattDebugMode.matcher(sPath);
-	        	if(m.find())
-	        	{
-	        		String sApiKey = m.group(1);
-	        		boolean isDebug = "true".equalsIgnoreCase(m.group(2));
-	        		apiConfig.setDebug(sApiKey, isDebug);
-	        	}
-        		try {
-    				RestApiUtil.processHttpResp(
-    						response, 
-    						HttpServletResponse.SC_OK, 
-    						TYPE_APP_JSON, 
-    						getDebugInfo().toString());
-    			} catch (IOException e) {
-    				throw new ServletException(e);
-    			}
-     		}
-        	else
-        	{
-        		processHttpMethods(request, response);
-        	}
+    	{	
+    		processHttpMethods(request, response);
     	}
 	}
     
