@@ -126,7 +126,8 @@ public class RESTApiConfig {
 		if(p!=null)
 		{
 			String sDebug = Boolean.valueOf(isDebug).toString();
-			p.put(_KEY_DEBUG, sDebug);
+			p.setProperty(_KEY_DEBUG, sDebug);
+			mapConfigs.put(sConfigKey, p);
 		}
 	}
 	
