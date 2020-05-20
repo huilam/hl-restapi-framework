@@ -8,6 +8,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.StringTokenizer;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -20,6 +24,8 @@ import org.json.JSONObject;
 import hl.common.CommonException;
 import hl.common.http.HttpResp;
 import hl.common.http.RestApiUtil;
+import hl.common.system.CommonInfo;
+import hl.common.system.Windows;
 import hl.restapi.plugins.IServicePlugin;
 
 public class RESTApiService extends HttpServlet {
@@ -32,8 +38,9 @@ public class RESTApiService extends HttpServlet {
 	
 	private static RESTApiConfig apiConfig = new RESTApiConfig();
 
+	private static Logger logger = Logger.getLogger(RESTApiService.class.getName());
 	
-	private static String _VERSION = "0.0.7";
+	private static String _VERSION = "0.1.0";
 		
 	public static final String GET 		= "GET";
 	public static final String POST 	= "POST";
@@ -41,28 +48,121 @@ public class RESTApiService extends HttpServlet {
 	public static final String PUT 		= "PUT";
 	
 	private static Map<String, List<String>> mapMandatoryCache = new HashMap<String, List<String>>();
+	private static Pattern pattDebugMode = Pattern.compile("/about/framework/debug/(.+?)/(true|false)");
 
     @Override
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException {
     	
-    	boolean isAbout = GET.equals(request.getMethod()) 
-    			&& "/about/framework".equals(request.getPathInfo());
+    	String sHttpMethod = request.getMethod();
+    	String sPath = request.getPathInfo();
+
+    	if(sPath==null)
+    		sPath = "";
+    	
+    	if(sPath.endsWith("/"))
+    		sPath = sPath.substring(0, sPath.length()-1);
+    	
+    	boolean isAbout = GET.equals(sHttpMethod) && sPath.startsWith("/about/framework");
     	
     	if(isAbout)
     	{
+    		JSONObject jsonAbout = getAbout();
+    		
+    		if(sPath.equals("/about/framework/sysinfo"))
+    		{	
+    			jsonAbout.put("SysInfo", getSysInfoJson());
+    		}
+    		
+    		else if(sPath.startsWith("/about/framework/loglevel/"))
+    		{
+    			if(sPath.endsWith("/DEBUG"))
+    			{
+    				logger.setLevel(Level.FINEST);
+    			}
+    			else if(sPath.endsWith("/INFO"))
+    			{
+    				logger.setLevel(Level.INFO);
+    			}
+    			else if(sPath.endsWith("/OFF"))
+    			{
+    				logger.setLevel(Level.OFF);
+    			}
+    		}
+    		
 			try {
-				RestApiUtil.processHttpResp(response, 
+				RestApiUtil.processHttpResp(
+						response, 
 						HttpServletResponse.SC_OK, 
-						TYPE_APP_JSON, getAbout().toString());
+						TYPE_APP_JSON, 
+						jsonAbout.toString());
 			} catch (IOException e) {
 				throw new ServletException(e);
 			}
     	}
     	else
     	{
-    		processHttpMethods(request, response);
+    		boolean isDebugInfo = GET.equals(sHttpMethod) && sPath.startsWith("/about/framework/debug");
+     		
+     		if(isDebugInfo)
+     		{
+	        	Matcher m = pattDebugMode.matcher(sPath);
+	        	if(m.find())
+	        	{
+	        		String sApiKey = m.group(1);
+	        		boolean isDebug = "true".equalsIgnoreCase(m.group(2));
+	        		apiConfig.setDebug(sApiKey, isDebug);
+	        	}
+        		try {
+    				RestApiUtil.processHttpResp(
+    						response, 
+    						HttpServletResponse.SC_OK, 
+    						TYPE_APP_JSON, 
+    						getDebugInfo().toString());
+    			} catch (IOException e) {
+    				throw new ServletException(e);
+    			}
+     		}
+        	else
+        	{
+        		processHttpMethods(request, response);
+        	}
     	}
 	}
+    
+    private JSONObject getDebugInfo()
+    {
+    	JSONObject json = new JSONObject();
+    	
+		Map<String, Properties> mapAll = apiConfig.getAllConfig();
+    	for(String apiKey : mapAll.keySet())
+    	{
+    		Properties prop = mapAll.get(apiKey);
+    		boolean isDebug = Boolean.parseBoolean((String)prop.get(apiKey+"."+RESTApiConfig._KEY_DEBUG));
+        	json.put(apiKey+"."+RESTApiConfig._KEY_DEBUG, isDebug);
+    	}
+    	
+    	return json;
+    }
+    
+    private static JSONObject getSysInfoJson()
+    {
+    	JSONObject json = new JSONObject();
+    	
+    	JSONObject jsonWin = Windows.getSystemInfo();
+    	if(jsonWin!=null && jsonWin.length()>0)
+    	{
+    		json.put("windows", jsonWin);
+    	}
+    	
+    	json.put("jvm", CommonInfo.getJDKInfo());
+    	json.put("storage", CommonInfo.getDiskInfo());
+
+    	json.put("system.environment", CommonInfo.getEnvProperties());
+    	json.put("system.properties", CommonInfo.getSysProperties());
+    	
+    	return json;
+    }
+    
     
     @Override
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException {
@@ -162,6 +262,7 @@ public class RESTApiService extends HttpServlet {
     {
     	List<CommonException> listException = new ArrayList<CommonException>();
     	
+    	boolean isDebug  = false;
     	HttpResp httpReq = new HttpResp();
     	httpReq.setHttp_status(HttpServletResponse.SC_NOT_FOUND);
   	
@@ -178,14 +279,31 @@ public class RESTApiService extends HttpServlet {
 			
 			RESTServiceReq restReq = new RESTServiceReq(req, propApiConfig);
 			restReq.setRestApiKey(sRestApiKey);
+			restReq.setReqUniqueID(System.nanoTime()+"");
 			//
-   		
+			if(isDebug)
+			{
+				logger.info("[DEBUG] rid:"+restReq.getReqUniqueID()+" "+restReq.getRestApiKey()+" - "+req.getMethod()+" "+req.getPathInfo());
+			}
+			
 			Map<String, String> mapConfig = restReq.getConfigMap();
 			//
 			IServicePlugin plugin = null;
 			try {
+				isDebug = apiConfig.isDebug(sRestApiKey) || logger.isLoggable(Level.FINE);
+				
+				String sReqUniqueID = String.valueOf(System.nanoTime());
+				restReq.setReqUniqueID(sReqUniqueID);
+				
 				plugin = getPlugin(mapConfig);
 				
+				long lStartTime = System.currentTimeMillis();
+				
+				if(isDebug)
+				{
+					logger.info("[DEBUG] rid:"+restReq.getReqUniqueID()+" "+restReq.getRestApiKey()+".plugin:"+plugin.getClass().getSimpleName()+".plugin.start");
+				}				
+
 				if(!httpReq.hasErrors())
 				{
 					httpReq = checkMandatoryJSONAttr(restReq, httpReq);
@@ -198,6 +316,13 @@ public class RESTApiService extends HttpServlet {
 				{
 					httpReq = postProcess(plugin, restReq, httpReq);
 				}
+				
+				if(isDebug)
+				{
+					long lElapsed = System.currentTimeMillis()-lStartTime;
+					logger.info("[DEBUG] rid:"+restReq.getReqUniqueID()+" "+restReq.getRestApiKey()+".plugin:"+plugin.getClass().getSimpleName()+".plugin.end - "+lElapsed+"ms");
+				}
+
 
 			} catch (RESTApiException e) {
 				
