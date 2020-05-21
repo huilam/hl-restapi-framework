@@ -132,7 +132,7 @@ public class RESTApiService extends HttpServlet {
     	for(String apiKey : mapAll.keySet())
     	{
     		Properties prop = mapAll.get(apiKey);
-    		boolean isDebug = Boolean.parseBoolean((String)prop.get(apiKey+"."+RESTApiConfig._KEY_DEBUG));
+    		boolean isDebug = Boolean.parseBoolean((String)prop.get(RESTApiConfig._KEY_DEBUG));
         	json.put(apiKey+"."+RESTApiConfig._KEY_DEBUG, isDebug);
     	}
     	
