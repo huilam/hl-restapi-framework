@@ -134,10 +134,14 @@ public class RESTApiConfig {
 	public boolean isDebug(String sConfigKey)
 	{
 		boolean isDebugMode = false;
-		Properties p = mapConfigs.get(sConfigKey);
-		if(p!=null)
+		
+		if(sConfigKey!=null)
 		{
-			return Boolean.valueOf(p.getProperty("debug", "false"));
+			Properties p = mapConfigs.get(sConfigKey);
+			if(p!=null)
+			{
+				return Boolean.valueOf(p.getProperty("debug", "false"));
+			}
 		}
 		
 		return isDebugMode;

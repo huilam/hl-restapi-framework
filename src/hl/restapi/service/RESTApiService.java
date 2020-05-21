@@ -261,11 +261,19 @@ public class RESTApiService extends HttpServlet {
     	HttpResp httpReq = new HttpResp();
     	httpReq.setHttp_status(HttpServletResponse.SC_NOT_FOUND);
   	
-		String sRestApiKey = getRestApiKey(req);
+		String sRestApiKey 	= getRestApiKey(req);
+		String sReqUniqueID = String.valueOf(System.nanoTime());
+		long  lReqStartTime = System.currentTimeMillis();
+		
+		isDebug = apiConfig.isDebug(sRestApiKey) || logger.isLoggable(Level.FINE);
+		
+		if(isDebug)
+		{
+			logger.info("[DEBUG] rid:"+sReqUniqueID+" "+sRestApiKey+".start - "+req.getMethod()+" "+req.getPathInfo());
+		}
 		
 		if(sRestApiKey!=null)
 		{
-			isDebug = apiConfig.isDebug(sRestApiKey) || logger.isLoggable(Level.FINE);
 			//
 			Properties propApiConfig = apiConfig.getConfig(sRestApiKey);
  			if(serveWebContent(propApiConfig, req, res))
@@ -275,24 +283,18 @@ public class RESTApiService extends HttpServlet {
 			
 			RESTServiceReq restReq = new RESTServiceReq(req, propApiConfig);
 			restReq.setRestApiKey(sRestApiKey);
-			restReq.setReqUniqueID(System.nanoTime()+"");
-			//
-			if(isDebug)
-			{
-				logger.info("[DEBUG] rid:"+restReq.getReqUniqueID()+" "+restReq.getRestApiKey()+" - "+req.getMethod()+" "+req.getPathInfo());
-			}
-			
+			restReq.setReqUniqueID(sReqUniqueID);
+
 			Map<String, String> mapConfig = restReq.getConfigMap();
 			//
 			IServicePlugin plugin = null;
 			try {
 				
-				String sReqUniqueID = String.valueOf(System.nanoTime());
 				restReq.setReqUniqueID(sReqUniqueID);
 				
 				plugin = getPlugin(mapConfig);
 				
-				long lStartTime = System.currentTimeMillis();
+				long lPluginStartTime = System.currentTimeMillis();
 				
 				if(isDebug)
 				{
@@ -314,8 +316,8 @@ public class RESTApiService extends HttpServlet {
 				
 				if(isDebug)
 				{
-					long lElapsed = System.currentTimeMillis()-lStartTime;
-					logger.info("[DEBUG] rid:"+restReq.getReqUniqueID()+" "+restReq.getRestApiKey()+".plugin:"+plugin.getClass().getSimpleName()+".plugin.end - "+lElapsed+"ms");
+					long lElapsed = System.currentTimeMillis()-lPluginStartTime;
+					logger.info("[DEBUG] rid:"+restReq.getReqUniqueID()+" "+restReq.getRestApiKey()+".plugin:"+plugin.getClass().getSimpleName()+".plugin.end - status:"+httpReq.getHttp_status()+" "+lElapsed+"ms");
 				}
 
 
@@ -359,6 +361,12 @@ public class RESTApiService extends HttpServlet {
 				httpReq.setContent_data(jsonError.toString());
 				httpReq.setHttp_status(HttpServletResponse.SC_BAD_REQUEST);
 			}
+		}
+		
+		if(isDebug)
+		{
+			long lTotalElapsedMs = System.currentTimeMillis()-lReqStartTime;
+			logger.info("[DEBUG] rid:"+sReqUniqueID+" "+sRestApiKey+".end - status:"+httpReq.getHttp_status()+" "+lTotalElapsedMs+"ms");
 		}
 		
 		try {
