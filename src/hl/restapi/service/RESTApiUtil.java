@@ -135,4 +135,42 @@ public class RESTApiUtil extends HttpServlet {
 		return jsonAttrs;
     }       
     
+    
+    public static String getReqUniqueId(RESTServiceReq req)
+    {
+    	// Query Param : ?_rid_= <value-to-used>
+    	// JSON Data   : ?_rid_name_= <json-attr-name-to-be-used> 
+    	
+		String sReqUniqueID = String.valueOf(System.nanoTime());
+		String _RID_ 		= req.getHttpServletReq().getParameter("_rid_");
+		if(_RID_!=null && _RID_.trim().length()>0)
+		{
+			//  this is direct value for 'rid' to use
+			sReqUniqueID = _RID_;
+		}
+		else
+		{
+			String _RID_NAME = req.getHttpServletReq().getParameter("_rid_name_");
+			if(_RID_NAME!=null && _RID_NAME.trim().length()>0)
+			{
+				String sInputJsonData = req.getInputContentData();
+				if(sInputJsonData!=null)
+				{
+					sInputJsonData = sInputJsonData.trim();
+					if(sInputJsonData.startsWith("{") && sInputJsonData.endsWith("}")) 
+					{
+						JSONObject jsonInput = new JSONObject(sInputJsonData);
+						_RID_ = (String)jsonInput.opt(_RID_NAME);
+						if(_RID_!=null && _RID_.trim().length()>0)
+						{
+							// using the json '_RID_NAME' attribute's value as 'RID'
+							sReqUniqueID = _RID_;
+						}
+					}
+				}
+			}
+		}
+    	return sReqUniqueID;
+    }
+    
 }

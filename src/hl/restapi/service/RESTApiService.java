@@ -262,16 +262,8 @@ public class RESTApiService extends HttpServlet {
     	httpReq.setHttp_status(HttpServletResponse.SC_NOT_FOUND);
   	
 		String sRestApiKey 	= getRestApiKey(req);
-		String sReqUniqueID = String.valueOf(System.nanoTime());
 		long  lReqStartTime = System.currentTimeMillis();
-		
-		isDebug = apiConfig.isDebug(sRestApiKey) || logger.isLoggable(Level.FINE);
-		
-		if(isDebug)
-		{
-			logger.info("[DEBUG] rid:"+sReqUniqueID+" "+sRestApiKey+".start - "+req.getMethod()+" "+req.getPathInfo());
-		}
-		
+
 		if(sRestApiKey!=null)
 		{
 			//
@@ -281,11 +273,20 @@ public class RESTApiService extends HttpServlet {
  				return;
  			}
 			
-			RESTServiceReq restReq = new RESTServiceReq(req, propApiConfig);
+ 			RESTServiceReq restReq = new RESTServiceReq(req, propApiConfig);
 			restReq.setRestApiKey(sRestApiKey);
+			
+			String sReqUniqueID = RESTApiUtil.getReqUniqueId(restReq);
 			restReq.setReqUniqueID(sReqUniqueID);
 
-			Map<String, String> mapConfig = restReq.getConfigMap();
+ 			isDebug = apiConfig.isDebug(sRestApiKey) || logger.isLoggable(Level.FINE);
+ 			if(isDebug)
+ 			{
+ 				logger.info("[DEBUG] rid:"+sReqUniqueID+" "+sRestApiKey+".start - "+req.getMethod()+" "+req.getPathInfo());
+ 			}
+
+ 			
+ 			Map<String, String> mapConfig = restReq.getConfigMap();
 			//
 			IServicePlugin plugin = null;
 			try {
