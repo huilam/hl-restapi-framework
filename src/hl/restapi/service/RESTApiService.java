@@ -263,6 +263,7 @@ public class RESTApiService extends HttpServlet {
   	
 		String sRestApiKey 	= getRestApiKey(req);
 		long  lReqStartTime = System.currentTimeMillis();
+		String sReqUniqueID = null;
 
 		if(sRestApiKey!=null)
 		{
@@ -276,7 +277,7 @@ public class RESTApiService extends HttpServlet {
  			RESTServiceReq restReq = new RESTServiceReq(req, propApiConfig);
 			restReq.setRestApiKey(sRestApiKey);
 			
-			String sReqUniqueID = RESTApiUtil.getReqUniqueId(restReq);
+			sReqUniqueID = RESTApiUtil.getReqUniqueId(restReq);
 			restReq.setReqUniqueID(sReqUniqueID);
 
  			isDebug = apiConfig.isDebug(sRestApiKey) || logger.isLoggable(Level.FINE);
