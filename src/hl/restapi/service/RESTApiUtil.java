@@ -4,6 +4,8 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.util.Enumeration;
+import java.util.logging.Logger;
+
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 
@@ -12,6 +14,7 @@ import org.json.JSONObject;
 public class RESTApiUtil extends HttpServlet {
 
 	private static final long serialVersionUID = -4060309439820494541L;
+	private static Logger logger = Logger.getLogger(RESTApiUtil.class.getName());
 
 	public static String appendSuffix(String aString, String aSuffix)
     {
@@ -165,6 +168,11 @@ public class RESTApiUtil extends HttpServlet {
 						{
 							// using the json '_RID_NAME' attribute's value as 'RID'
 							sReqUniqueID = _RID_;
+						}
+						else
+						{
+							//debug
+							logger.fine("[DEBUG] FAILED to use '"+_RID_NAME+"' as rid value. Input Json:"+sInputJsonData);
 						}
 					}
 				}
