@@ -387,6 +387,20 @@ public class RESTApiService extends HttpServlet {
     	
     	if(sProxyUrl!=null && sProxyUrl.trim().length()>0)
     	{
+    		//Path param
+    		String sTmpProxyUrl = sProxyUrl.trim();
+    		JSONObject jsonPathParam = aRestReq.getUrlPathParam();
+    		if(jsonPathParam!=null)
+    		{
+    			for(String sParamKey : jsonPathParam.keySet())
+    			{
+    				String sReplaceStr = "\\{"+sParamKey+"\\}";
+    				String sReplaceVal = jsonPathParam.getString(sParamKey);
+    				sTmpProxyUrl = sTmpProxyUrl.replaceAll(sReplaceStr, sReplaceVal);
+    			}
+    		}
+    		sProxyUrl = sTmpProxyUrl;
+    		
     		try {
     			if(GET.equalsIgnoreCase(aRestReq.getHttpMethod()))
     			{
