@@ -17,6 +17,9 @@ public class SysOutPlugin implements IServicePlugin {
 		} catch (UnsupportedEncodingException e) {
 			 prn = System.out;
 		}
+		
+		aHttpResp.setHttp_status(204);
+		
 		prn.println();
 		prn.println("[ postProcess ]");
 		prn.println("input:");

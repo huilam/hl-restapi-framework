@@ -267,101 +267,107 @@ public class RESTApiService extends HttpServlet {
 
 		if(sRestApiKey!=null)
 		{
-			//
-			Properties propApiConfig = apiConfig.getConfig(sRestApiKey);
- 			if(serveWebContent(propApiConfig, req, res))
- 			{
- 				return;
- 			}
+			boolean isDisabled = apiConfig.isApiMethodDisabled(sRestApiKey, req.getMethod());
 			
- 			RESTServiceReq restReq = new RESTServiceReq(req, propApiConfig);
-			restReq.setRestApiKey(sRestApiKey);
-			
-			sReqUniqueID = RESTApiUtil.getReqUniqueId(restReq);
-			restReq.setReqUniqueID(sReqUniqueID);
-
- 			isDebug = apiConfig.isDebug(sRestApiKey) || logger.isLoggable(Level.FINE);
- 			if(isDebug)
- 			{
- 				logger.info("[DEBUG] rid:"+sReqUniqueID+" "+sRestApiKey+".start - "+req.getMethod()+" "+req.getPathInfo());
- 			}
-
- 			
- 			Map<String, String> mapConfig = restReq.getConfigMap();
-			//
-			IServicePlugin plugin = null;
-			try {
-				
-				restReq.setReqUniqueID(sReqUniqueID);
-				
-				plugin = getPlugin(mapConfig);
-				
-				long lPluginStartTime = System.currentTimeMillis();
-				
-				if(isDebug)
-				{
-					logger.info("[DEBUG] rid:"+restReq.getReqUniqueID()+" "+restReq.getRestApiKey()+".plugin:"+plugin.getClass().getSimpleName()+".plugin.start");
-				}				
-
-				if(!httpReq.hasErrors())
-				{
-					httpReq = checkMandatoryJSONAttr(restReq, httpReq);
-				}
-				if(!httpReq.hasErrors())
-				{
-					httpReq = doForwardProxy(restReq, httpReq);
-				}
-				if(!httpReq.hasErrors())
-				{
-					httpReq = postProcess(plugin, restReq, httpReq);
-				}
-				
-				if(isDebug)
-				{
-					long lElapsed = System.currentTimeMillis()-lPluginStartTime;
-					logger.info("[DEBUG] rid:"+restReq.getReqUniqueID()+" "+restReq.getRestApiKey()+".plugin:"+plugin.getClass().getSimpleName()+".plugin.end - status:"+httpReq.getHttp_status()+" "+lElapsed+"ms");
-				}
-
-
-			} catch (RESTApiException e) {
-				
-				try {
-					httpReq = handleException(plugin, restReq, httpReq, e);
-				} catch (RESTApiException e1) {
-					httpReq.addToErrorMap(e1.getErrorCode(), e1.getMessage());
-				}
-			}
-			finally
+			if(!isDisabled)
 			{
-				///
-				if(httpReq.hasErrors())
-				{
-					Map<String, String> map = httpReq.getErrorMap();
-					for(String sErrID : map.keySet())
+			
+				//
+				Properties propApiConfig = apiConfig.getConfig(sRestApiKey);
+	 			if(serveWebContent(propApiConfig, req, res))
+	 			{
+	 				return;
+	 			}
+				
+	 			RESTServiceReq restReq = new RESTServiceReq(req, propApiConfig);
+				restReq.setRestApiKey(sRestApiKey);
+				
+				sReqUniqueID = RESTApiUtil.getReqUniqueId(restReq);
+				restReq.setReqUniqueID(sReqUniqueID);
+	
+	 			isDebug = apiConfig.isDebug(sRestApiKey) || logger.isLoggable(Level.FINE);
+	 			if(isDebug)
+	 			{
+	 				logger.info("[DEBUG] rid:"+sReqUniqueID+" "+sRestApiKey+".start - "+req.getMethod()+" "+req.getPathInfo());
+	 			}
+	
+	 			
+	 			Map<String, String> mapConfig = restReq.getConfigMap();
+				//
+				IServicePlugin plugin = null;
+				try {
+					
+					restReq.setReqUniqueID(sReqUniqueID);
+					
+					plugin = getPlugin(mapConfig);
+					
+					long lPluginStartTime = System.currentTimeMillis();
+					
+					if(isDebug)
 					{
-						String sErrReason = map.get(sErrID);
-						listException.add(new RESTApiException(sErrID, sErrReason));
+						logger.info("[DEBUG] rid:"+restReq.getReqUniqueID()+" "+restReq.getRestApiKey()+".plugin:"+plugin.getClass().getSimpleName()+".plugin.start");
+					}				
+	
+					if(!httpReq.hasErrors())
+					{
+						httpReq = checkMandatoryJSONAttr(restReq, httpReq);
+					}
+					if(!httpReq.hasErrors())
+					{
+						httpReq = doForwardProxy(restReq, httpReq);
+					}
+					if(!httpReq.hasErrors())
+					{
+						httpReq = postProcess(plugin, restReq, httpReq);
+					}
+					
+					if(isDebug)
+					{
+						long lElapsed = System.currentTimeMillis()-lPluginStartTime;
+						logger.info("[DEBUG] rid:"+restReq.getReqUniqueID()+" "+restReq.getRestApiKey()+".plugin:"+plugin.getClass().getSimpleName()+".plugin.end - status:"+httpReq.getHttp_status()+" "+lElapsed+"ms");
+					}
+	
+	
+				} catch (RESTApiException e) {
+					
+					try {
+						httpReq = handleException(plugin, restReq, httpReq, e);
+					} catch (RESTApiException e1) {
+						httpReq.addToErrorMap(e1.getErrorCode(), e1.getMessage());
 					}
 				}
-				
-			}
-			
-			if(listException.size()>0)
-			{
-				JSONArray jsonArrErrors = new JSONArray();
-				
-				for(CommonException ce : listException)
+				finally
 				{
-					JSONObject jsonE = new JSONObject();
-					jsonE.put(ce.getErrorCode(), ce.getErrorMsg());
-					jsonArrErrors.put(jsonE);
+					///
+					if(httpReq.hasErrors())
+					{
+						Map<String, String> map = httpReq.getErrorMap();
+						for(String sErrID : map.keySet())
+						{
+							String sErrReason = map.get(sErrID);
+							listException.add(new RESTApiException(sErrID, sErrReason));
+						}
+					}
+					
 				}
 				
-				JSONObject jsonError = new JSONObject();
-				jsonError.put("errors", jsonArrErrors);
-				httpReq.setContent_type(TYPE_APP_JSON);
-				httpReq.setContent_data(jsonError.toString());
-				httpReq.setHttp_status(HttpServletResponse.SC_BAD_REQUEST);
+				if(listException.size()>0)
+				{
+					JSONArray jsonArrErrors = new JSONArray();
+					
+					for(CommonException ce : listException)
+					{
+						JSONObject jsonE = new JSONObject();
+						jsonE.put(ce.getErrorCode(), ce.getErrorMsg());
+						jsonArrErrors.put(jsonE);
+					}
+					
+					JSONObject jsonError = new JSONObject();
+					jsonError.put("errors", jsonArrErrors);
+					httpReq.setContent_type(TYPE_APP_JSON);
+					httpReq.setContent_data(jsonError.toString());
+					httpReq.setHttp_status(HttpServletResponse.SC_BAD_REQUEST);
+				}
 			}
 		}
 		

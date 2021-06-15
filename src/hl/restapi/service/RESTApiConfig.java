@@ -23,7 +23,9 @@
 package hl.restapi.service;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.StringTokenizer;
@@ -40,6 +42,7 @@ public class RESTApiConfig {
 	public static String _VAR_HTTP_METHOD			= ".<HTTP_METHOD>";
 	//
 	public static String _PROP_ADDONS_PROP_FILES	= "system.addons.properties.files";
+	public static String _KEY_DISABLED				= "optional.disabled";
 	//
 	public static String _KEY_PLUGIN_CLASSNAME		= "plugin.implementation";
 	public static String _KEY_ECHO_ATTR_PREFIX		= "optional.echo.jsonattr.prefix";
@@ -56,6 +59,8 @@ public class RESTApiConfig {
 	public static String ERRCODE_PLUGINEXCEPTION	= "plugin_exception";
 	public static String ERRCODE_INVALIDFORMAT		= "invalid_format_exception";
 
+	//
+	private Map<String, List<String>> mapApiDisabledHttpMethods 	= new HashMap<String, List<String>>();
 	//
 	private static Map<Integer, Map<String, String>> mapLenUrls = new HashMap<Integer, Map<String, String>>();
 	private static Pattern pattMappedUrlKey 	= Pattern.compile("restapi\\.(.+?)\\."+RESTApiConfig._KEY_MAPPED_URL); 	
@@ -134,7 +139,51 @@ public class RESTApiConfig {
 			}
 		}
 		
+		List<String> listDisabledAll = new ArrayList<String>();
+		for(String sApiKey : getAllConfig().keySet())
+		{
+			Properties propApi = getConfig(sApiKey);
+			String sDisabledMethods = propApi.getProperty(_KEY_DISABLED);
+			if(sDisabledMethods!=null && sDisabledMethods.trim().length()>0)
+			{
+				List<String> listDisabledMethods = new ArrayList<String>();
+				StringTokenizer tk = new StringTokenizer(sDisabledMethods, ",");
+				while(tk.hasMoreTokens())
+				{
+					String sDisabledMethod = tk.nextToken().trim().toUpperCase();
+					listDisabledMethods.add(sDisabledMethod);
+					//System.out.println("Adding disabled Method "+sApiKey+" "+sDisabledMethod);
+				}		
+				
+				boolean isDisabledAll = (listDisabledMethods.contains("TRUE") && listDisabledMethods.contains("ALL"));
+				if(isDisabledAll)
+				{
+					listDisabledAll.add(sApiKey);
+				}
+				else
+				{
+					mapApiDisabledHttpMethods.put(sApiKey, listDisabledMethods);
+				}
+			}
+		}
+		
+		for(String sApiKey : listDisabledAll)
+		{
+			getAllConfig().remove(sApiKey);
+			System.out.println("Remove "+sApiKey+" (disabled)");
+		}
+		
 		addUrlMapping(props);
+	}
+	
+	public boolean isApiMethodDisabled(String sConfigKey, String sHttpMethod)
+	{
+		List<String> listDisabledMethods = mapApiDisabledHttpMethods.get(sConfigKey);
+		if(listDisabledMethods==null)
+		{
+			return false;
+		}
+		return listDisabledMethods.contains(sHttpMethod.toUpperCase());
 	}
 	
 	public void addConfig(String sConfigKey, Properties aProp)
