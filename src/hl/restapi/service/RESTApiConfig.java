@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+import java.util.StringTokenizer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -37,6 +38,8 @@ public class RESTApiConfig {
 	public static String _PROP_FILENAME 			= "restapi.properties";
 	
 	public static String _VAR_HTTP_METHOD			= ".<HTTP_METHOD>";
+	//
+	public static String _PROP_ADDONS_PROP_FILES	= "system.addons.properties.files";
 	//
 	public static String _KEY_PLUGIN_CLASSNAME		= "plugin.implementation";
 	public static String _KEY_ECHO_ATTR_PREFIX		= "optional.echo.jsonattr.prefix";
@@ -85,6 +88,30 @@ public class RESTApiConfig {
 				props = PropUtil.loadProperties(aPropFilename);
 			} catch (IOException e) {
 				props = null;
+			}
+		}
+		
+		String sAddOnProps = props.getProperty(_PROP_ADDONS_PROP_FILES, null);
+		if(sAddOnProps!=null && sAddOnProps.trim().length()>0)
+		{
+			StringTokenizer tk = new StringTokenizer(sAddOnProps,",");
+			while(tk.hasMoreTokens())
+			{
+				String sAddOnPropFileName = tk.nextToken().trim();
+				
+				if(sAddOnPropFileName!=null && sAddOnPropFileName.length()>0)
+				{
+					Properties propAddOn = null;
+					try {
+						propAddOn = PropUtil.loadProperties(sAddOnPropFileName);
+						if(propAddOn!=null && propAddOn.size()>0)
+						{
+							props.putAll(propAddOn);
+						}
+					} catch (IOException e) {
+						propAddOn = null;
+					}
+				}
 			}
 		}
 		
