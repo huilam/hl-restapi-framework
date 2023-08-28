@@ -2,6 +2,8 @@ package hl.restapi.service;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -306,6 +308,7 @@ public class RESTApiService extends HttpServlet {
 	
 	 			
 	 			Map<String, String> mapConfig = restReq.getConfigMap();
+	 			String sPluginClassName = null;
 				//
 				IServicePlugin plugin = null;
 				try {
@@ -313,12 +316,20 @@ public class RESTApiService extends HttpServlet {
 					restReq.setReqUniqueID(sReqUniqueID);
 					
 					plugin = getPlugin(mapConfig);
+					if(plugin!=null)
+					{
+						sPluginClassName = plugin.getClass().getSimpleName();
+					}
+					else
+					{
+						sPluginClassName = "(null-plugin)";
+					}
 					
 					long lPluginStartTime = System.currentTimeMillis();
 					
 					if(isDebug)
 					{
-						logger.info("[DEBUG] rid:"+restReq.getReqUniqueID()+" "+restReq.getRestApiKey()+".plugin:"+plugin.getClass().getSimpleName()+".plugin.start");
+						logger.info("[DEBUG] rid:"+restReq.getReqUniqueID()+" "+restReq.getRestApiKey()+".plugin:"+sPluginClassName+".plugin.start");
 					}				
 	
 					if(!httpReq.hasErrors())
@@ -337,7 +348,7 @@ public class RESTApiService extends HttpServlet {
 					if(isDebug)
 					{
 						long lElapsed = System.currentTimeMillis()-lPluginStartTime;
-						logger.info("[DEBUG] rid:"+restReq.getReqUniqueID()+" "+restReq.getRestApiKey()+".plugin:"+plugin.getClass().getSimpleName()+".plugin.end - status:"+httpReq.getHttp_status()+" "+lElapsed+"ms");
+						logger.info("[DEBUG] rid:"+restReq.getReqUniqueID()+" "+restReq.getRestApiKey()+".plugin:"+sPluginClassName+".plugin.end - status:"+httpReq.getHttp_status()+" "+lElapsed+"ms");
 					}
 	
 	
@@ -579,13 +590,18 @@ public class RESTApiService extends HttpServlet {
     	if(sPluginClassName!=null && sPluginClassName.trim().length()>0)
     	{
 	    	try {
-				plugin = (IServicePlugin) Class.forName(sPluginClassName).newInstance();
+	    		Constructor<?>[] cons = Class.forName(sPluginClassName).getDeclaredConstructors();
+	    		plugin = (IServicePlugin) cons[0].newInstance();
 			} catch (InstantiationException e) {
 				throw new RESTApiException(RESTApiConfig.ERRCODE_PLUGINEXCEPTION, e);
 			} catch (IllegalAccessException e) {
 				throw new RESTApiException(RESTApiConfig.ERRCODE_PLUGINEXCEPTION, e);
 			} catch (ClassNotFoundException e) {
 				throw new RESTApiException(RESTApiConfig.ERRCODE_PLUGINEXCEPTION, e);
+			} catch (IllegalArgumentException e) {
+				throw new RESTApiException(RESTApiConfig.ERRCODE_PLUGINEXCEPTION, e);
+			} catch (InvocationTargetException e) {
+				e.printStackTrace();
 			}
     	}
     	return plugin;
