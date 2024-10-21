@@ -26,6 +26,8 @@ import hl.common.CommonException;
 
 public class RESTApiException extends CommonException {
 
+	private static final long serialVersionUID = -4162852445420771694L;
+
 	public RESTApiException(String aErrCode, String aErrReason, String aErrDebugInfo, Throwable aThrowable) {
 		super(aErrCode, aErrReason, aErrDebugInfo, aThrowable);
 	}
