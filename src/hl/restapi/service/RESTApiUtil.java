@@ -6,8 +6,8 @@ import java.net.URLEncoder;
 import java.util.Enumeration;
 import java.util.logging.Logger;
 
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
 
 import org.json.JSONObject;
 
