@@ -45,7 +45,7 @@ public class RESTApiService extends HttpServlet {
 
 	private static Logger logger = Logger.getLogger(RESTApiService.class.getName());
 	
-	private static String _VERSION = "0.1.0";
+	private static String _VERSION = "0.2.0";
 		
 	public static final String GET 		= "GET";
 	public static final String POST 	= "POST";
@@ -430,6 +430,28 @@ public class RESTApiService extends HttpServlet {
     			}
     		}
     		sProxyUrl = sTmpProxyUrl;
+    		
+    		
+    		//Construct full URL
+    		if(!sProxyUrl.startsWith("http"))
+    		{
+    			if(!sProxyUrl.startsWith("/"))
+    				sProxyUrl += "/";
+    			
+    			HttpServletRequest httpReq = aRestReq.getHttpServletReq();
+    			StringBuffer sb = new StringBuffer();
+    			if(httpReq.isSecure())
+    				sb.append("https://");
+    			else
+    				sb.append("http://");
+    			sb.append(httpReq.getServerName());
+    			sb.append(":").append(httpReq.getServerPort());
+    			sb.append("/").append(httpReq.getContextPath());
+    			
+    			sTmpProxyUrl = sb.toString() + sProxyUrl;
+    			sProxyUrl =  sTmpProxyUrl;
+    		}
+    		
     		
     		try {
     			if(GET.equalsIgnoreCase(aRestReq.getHttpMethod()))
