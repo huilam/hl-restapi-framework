@@ -41,6 +41,8 @@ public class RESTApiConfig {
 	
 	public static String _VAR_HTTP_METHOD			= ".<HTTP_METHOD>";
 	//
+	public static String _PROP_SYSTEM_CUSTOM		= "system.custom";
+	//
 	public static String _PROP_ADDONS_PROP_FILES	= "system.addons.properties.files";
 	public static String _KEY_DISABLED				= "optional.disabled";
 	//
@@ -122,7 +124,8 @@ public class RESTApiConfig {
 		
 		for(Object oKey : props.keySet())
 		{
-			Matcher m = pattRestApiKey.matcher(oKey.toString());
+			String sKey = oKey.toString();
+			Matcher m = pattRestApiKey.matcher(sKey);
 			if(m.find())
 			{
 				String sApiKey = m.group(1);
@@ -133,9 +136,20 @@ public class RESTApiConfig {
 				if(propApi==null)
 					propApi = new Properties();
 				
-				propApi.put(sPropKey, props.getProperty(oKey.toString()));
+				propApi.put(sPropKey, props.getProperty(sKey));
 				
 				addConfig(sApiKey, propApi);
+			}
+			else if (sKey.startsWith(_PROP_SYSTEM_CUSTOM+"."))
+			{
+				Properties propSys = getConfig(_PROP_SYSTEM_CUSTOM);
+				if(propSys==null)
+					propSys = new Properties();
+				
+				String sSysProKey = sKey.substring(_PROP_SYSTEM_CUSTOM.length()+1);
+				propSys.put(sSysProKey, props.get(sKey));
+				
+				addConfig(_PROP_SYSTEM_CUSTOM, propSys);
 			}
 		}
 		
@@ -193,7 +207,24 @@ public class RESTApiConfig {
 	
 	public Properties getConfig(String sConfigKey)
 	{
-		return mapConfigs.get(sConfigKey);
+		return getConfig(sConfigKey, true);
+	}
+	
+	public Properties getConfig(String sConfigKey, boolean isIncludeSysCustomProp)
+	{
+		Properties prop = new Properties();
+				
+		Properties propConfigKey = mapConfigs.get(sConfigKey);
+		if(propConfigKey!=null)
+			prop.putAll(propConfigKey);
+		
+		if(isIncludeSysCustomProp)
+		{
+			Properties propSys = mapConfigs.get(_PROP_SYSTEM_CUSTOM);
+			if(propSys!=null)
+				prop.putAll(propSys);
+		}
+		return prop;
 	}
 	
 	public void setDebug(String sConfigKey, boolean isDebug)
