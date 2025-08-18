@@ -42,6 +42,7 @@ public class RESTApiConfig {
 	public static String _VAR_HTTP_METHOD			= ".<HTTP_METHOD>";
 	//
 	public static String _PROP_SYSTEM_CUSTOM		= "system.custom";
+	public static String _PROP_SYSTEM_DEFAULT		= "system.default";
 	//
 	public static String _PROP_ADDONS_PROP_FILES	= "system.addons.properties.files";
 	public static String _KEY_DISABLED				= "optional.disabled";
@@ -140,16 +141,24 @@ public class RESTApiConfig {
 				
 				addConfig(sApiKey, propApi);
 			}
-			else if (sKey.startsWith(_PROP_SYSTEM_CUSTOM+"."))
+			else
 			{
-				Properties propSys = getConfig(_PROP_SYSTEM_CUSTOM);
-				if(propSys==null)
-					propSys = new Properties();
+				String[] sSysPropPrefix = new String[] {_PROP_SYSTEM_DEFAULT, _PROP_SYSTEM_CUSTOM};
 				
-				String sSysProKey = sKey.substring(_PROP_SYSTEM_CUSTOM.length()+1);
-				propSys.put(sSysProKey, props.get(sKey));
-				
-				addConfig(_PROP_SYSTEM_CUSTOM, propSys);
+				for(String sProPrefix : sSysPropPrefix)
+				{
+					if (sKey.startsWith(sProPrefix+"."))
+					{
+						Properties propSys = getConfig(sProPrefix);
+						if(propSys==null)
+							propSys = new Properties();
+						
+						String sSysProKey = sKey.substring(sProPrefix.length()+1);
+						propSys.put(sSysProKey, props.get(sKey));
+						
+						addConfig(sProPrefix, propSys);
+					}
+				}
 			}
 		}
 		

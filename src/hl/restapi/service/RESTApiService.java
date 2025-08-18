@@ -45,7 +45,7 @@ public class RESTApiService extends HttpServlet {
 
 	private static Logger logger = Logger.getLogger(RESTApiService.class.getName());
 	
-	private static String _VERSION = "0.2.0";
+	private static String _VERSION = "0.3.0";
 		
 	public static final String GET 		= "GET";
 	public static final String POST 	= "POST";
