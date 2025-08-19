@@ -156,7 +156,7 @@ public class RESTApiService extends HttpServlet {
     	
     	json.put("jvm", CommonInfo.getJDKInfo());
     	json.put("storage", CommonInfo.getDiskInfo());
-
+    	
     	json.put("system.environment", CommonInfo.getEnvProperties());
     	json.put("system.properties", CommonInfo.getSysProperties());
     	
@@ -452,6 +452,21 @@ public class RESTApiService extends HttpServlet {
     			sProxyUrl =  sTmpProxyUrl;
     		}
     		
+    		//Reconstruct Queries String
+    		StringBuffer sbQueryStr = new StringBuffer();
+    		Map<String, String[]> mapParams = aRestReq.getHttpServletReq().getParameterMap();
+    		for(String sKey : mapParams.keySet())
+    		{
+    			String sVal = ((String[]) mapParams.get(sKey))[0];
+    			sbQueryStr.append("&").append(sKey).append("=").append(sVal);
+    		}
+    		if(sbQueryStr.length()>0)
+    		{
+    			if(sProxyUrl.indexOf("?")==0)
+    				sProxyUrl += "?";
+    			sProxyUrl += sbQueryStr.toString();
+    		}
+    		////
     		
     		try {
     			if(GET.equalsIgnoreCase(aRestReq.getHttpMethod()))
