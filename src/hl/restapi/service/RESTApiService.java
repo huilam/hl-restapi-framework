@@ -462,8 +462,8 @@ public class RESTApiService extends HttpServlet {
     		}
     		if(sbQueryStr.length()>0)
     		{
-    			if(sProxyUrl.indexOf("?")==0)
-    				sProxyUrl += "?";
+    			if(sProxyUrl.indexOf("?")==-1)
+    				sProxyUrl += "?1=1";
     			sProxyUrl += sbQueryStr.toString();
     		}
     		////
