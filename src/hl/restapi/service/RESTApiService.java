@@ -4,6 +4,8 @@ import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -458,6 +460,11 @@ public class RESTApiService extends HttpServlet {
     		for(String sKey : mapParams.keySet())
     		{
     			String sVal = ((String[]) mapParams.get(sKey))[0];
+    			if(sVal.length()>0)
+    			{
+    				sVal = sVal.replace(" ", "%20");
+    				sVal = URLEncoder.encode(sVal, StandardCharsets.UTF_8);
+    			}
     			sbQueryStr.append("&").append(sKey).append("=").append(sVal);
     		}
     		if(sbQueryStr.length()>0)
